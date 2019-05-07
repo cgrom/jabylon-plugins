@@ -52,9 +52,7 @@ public class CSharpScanner implements PropertyScanner {
 
 	@Override
 	public String[] getDefaultIncludes() {
-
 		LOG.info("C#:getDefaultIncludes1");
-
 		return DEFAULT_INCLUDES;
 	}
 
@@ -63,16 +61,13 @@ public class CSharpScanner implements PropertyScanner {
 	 */
 	@Override
 	public String[] getDefaultExcludes() {
-
 		LOG.info("C#:getDefaultExcludes1");
-
 		return DEFAULT_EXCLUDES;
 	}
 
 
 	@Override
 	public boolean isTemplate(File propertyFile, String masterLocale) {
-
 		LOG.info("C#:isTemplate1");
 		LOG.info("C#:isTemplate2 propertyFile: " + propertyFile.getName() + " masterLocale: " + masterLocale);
 
@@ -85,11 +80,8 @@ public class CSharpScanner implements PropertyScanner {
 
 	@Override
 	public boolean isTranslation(File propertyFile, ScanConfiguration config) {
-
 		LOG.info("C#:isTranslation1");
-
 		String fileName = propertyFile.getName();
-
 		LOG.info("C#:isTranslation2 fileName: " + fileName);
 
 		if (isResourceFile(propertyFile) && (countingPeriodsFullfillsTranslationFileCondition(propertyFile))) {
@@ -107,7 +99,6 @@ public class CSharpScanner implements PropertyScanner {
             LOG.info("C#:countingPeriodsFullfillsTranslationFileCondition2: translation file" );
             return true;
         }
-
         LOG.info("C#:countingPeriodsFullfillsTranslationFileCondition3: no translation file" );
         return false;
 	}
@@ -116,23 +107,16 @@ public class CSharpScanner implements PropertyScanner {
 	private boolean countingPeriodsFullfillsTemplateFileCondition(File propertyFile) {
 		//E.g.: Resources.nl.resx is a translation file, Resources.resx is a template file
 
+		boolean bReturn = false;
 	    LOG.info("C#:countingPeriodsFullfillsTemplateFileCondition1: propertyFile: " + propertyFile.getName());
 
         if (1 == propertyFile.getName().length() - propertyFile.getName().replace(".","").length()) {
             LOG.info("C#:countingPeriodsFullfillsTemplateFileCondition2: template" );
-            return true;
+            bReturn = true;
         }
 
-        LOG.info("C#:countingPeriodsFullfillsTemplateFileCondition3: no template" );
-        return false;
-
-        // did not work:
-		/*if (2 == propertyFile.getName().split(".", -1).length) {
-			LOG.info("C#:countingPeriodsFullfillsTemplateFileCondition3: template" );
-			return true;
-		}
-		LOG.info("C#:countingPeriodsFullfillsTemplateFileCondition4: no template" );
-		return false;*/
+        LOG.info("C#:countingPeriodsFullfillsTemplateFileCondition3: bReturn: " + bReturn);
+        return bReturn;
 	}
 
 
@@ -140,13 +124,15 @@ public class CSharpScanner implements PropertyScanner {
 
 		LOG.info("C#:isResourceFile1" );
 		LOG.info("C#:isResourceFile2, propertyFile: " + propertyFile.getName());
+		
+		boolean isResFile = false;
 
 		if(propertyFile.getName().endsWith(".resx")) {
 			LOG.info("C#:isResourceFile3: resource file" );
-			return true;
+			isResFile = true;
 		}
-		LOG.info("C#:isResourceFile4: no resource file" );
-		return false;
+		LOG.info("C#:isResourceFile4: isResFile: " + isResFile );
+		return isResFile;
 	}
 
 
@@ -174,26 +160,44 @@ public class CSharpScanner implements PropertyScanner {
 	@Override
 	public Map<Locale, File> findTranslations(File template, ScanConfiguration config) {
 
-		LOG.info("C#:findTranslations1");
+		LOG.info("C#:findTranslations1, template: " + template.getName());
 
 		if (isTemplate(template, "")) {
+			
+			// instead of using org.apache.commons
+			String templateWithoutExtension = getFirstPart(template);
+			
 			String folder = template.getParent();
 			LOG.info("C#:findTranslations2: folder: " + folder);
 			File[] files = new File(folder).listFiles();
 			Map<Locale, File> translations = new HashMap<Locale, File>();
 			for (File file : files) {
 				LOG.info("C#:findTranslations3: file: " + file.getName());
-				if (isTranslation(file, config)) {
-					LOG.info("C#:findTranslations4: is translation");
-					translations.put(getLocale(file), file);
+				if (templateWithoutExtension.equals(getFirstPart(file))) {
+					LOG.info("C#:findTranslations4: first part matches");
+					if (isTranslation(file, config)) {
+						LOG.info("C#:findTranslations5: is translation");
+						translations.put(getLocale(file), file);
+					}
 				}
 			}
-			if (!translations.isEmpty()) {
-				return translations;
-			}
+			return translations;
 		}
 		return null;
 	}
+	
+	private String getFirstPart(File file) {
+		String firstPart = "";
+		String fileParts[] = file.getName().split("\\.");
+		
+		if (0 < fileParts.length) {
+			firstPart = fileParts[0];
+		}
+		LOG.info("C#:getFirstPart, return: " + firstPart);
+		return(firstPart);
+	}
+	
+
 
 
 	@Override
@@ -211,11 +215,8 @@ public class CSharpScanner implements PropertyScanner {
 
 	@Override
 	public Locale getLocale(File propertyFile) {
-
 		LOG.info("C#:getLocale1, propertyFile: " + propertyFile);
-		
 		String propFileName = propertyFile.getName();				// e.g.: dialog.resx (template file), dialog.nl.resx (translation file)
-		
 		LOG.info("C#:getLocale2, propFileName: " + propFileName);
 		
 		String[] splittedPropFileName = propFileName.split("\\.");
@@ -229,42 +230,35 @@ public class CSharpScanner implements PropertyScanner {
 		}
 		else if (1 < splittedPropFileName.length) {
 			LOG.info("C#:getLocale4, splittedPropFileName.length: " + splittedPropFileName.length);
-			String extension = splittedPropFileName[splittedPropFileName.length-1];
 			
 			if (2 == splittedPropFileName.length) {
 				//e.g.: dialog.resx (template file)
+				isTemplate = true;
 			}
-			else {
-				if (5 == splittedPropFileName[splittedPropFileName.length-2].length()) {
-					if ("_" == splittedPropFileName[splittedPropFileName.length-2].substring(2,3)) {
-						LOG.info("C#:getLocale5, language + culture ");
-						language = splittedPropFileName[splittedPropFileName.length-2].substring(0,2);
-						culture = splittedPropFileName[splittedPropFileName.length-2].substring(3,5);
-					}
-					else {
-						LOG.info("C#:getLocale6, template ");
-						isTemplate = true;
-					}
-				} else if (2 == splittedPropFileName[splittedPropFileName.length-2].length()) {
-					LOG.info("C#:getLocale7, only language ");
+			else if (3 == splittedPropFileName.length){
+				if (2 == splittedPropFileName[splittedPropFileName.length-2].length()) {
+					LOG.info("C#:getLocale6, only language ");
 					language = splittedPropFileName[splittedPropFileName.length-2];
 				}
 				else {
-					LOG.info("C#:getLocale8, template ");
-					isTemplate = true;
+					LOG.info("C#:getLocale7, splittedPropFileName[splittedPropFileName.length-2].substring(2,3): " + splittedPropFileName[splittedPropFileName.length-2].substring(2,3));
+					if ("-".equals(splittedPropFileName[splittedPropFileName.length-2].substring(2,3))) {
+						LOG.info("C#:getLocale8, language + culture ");
+						language = splittedPropFileName[splittedPropFileName.length-2].substring(0,2);
+						culture = splittedPropFileName[splittedPropFileName.length-2].substring(3);
+					}
 				}
 			}
 		}
 		
 		Locale loc = null;
 
-		if (true == isTemplate) {
-			LOG.info("C#:getLocale9, isTemplate");
-			loc = new Locale("en", "US");		// In C# we actually translate from American English
-		}
-		else  if (0 < language.length()){
-			LOG.info("C#:getLocale10, isTranslation File, language: " + language + " culture: " + culture);
-			loc = new Locale(language, culture);
+		if (false == isTemplate) {
+			LOG.info("C#:getLocale11, no Template");
+			if (0 < language.length()){
+				LOG.info("C#:getLocale12, isTranslation File, language: " + language + " culture: " + culture);
+				loc = new Locale(language, culture);
+			}
 		}
 		return loc;
 	}
@@ -272,27 +266,21 @@ public class CSharpScanner implements PropertyScanner {
 
 	@Override
 	public boolean isBilingual() {
-
 		LOG.info("C#:isBilingual1");
-
 		return false;
 	}
 
 
 	@Override
 	public PropertyConverter createConverter(URI resource) {
-
 		LOG.info("C#:createConverter1, resource: " + resource.path());
-
 		return new CSharpConverter(resource, true);
 	}
 
 
 	@Override
 	public String getEncoding() {
-
 		LOG.info("C#:getEncoding1");
-
 		return "UTF-8";
 	}
 }
