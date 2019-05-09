@@ -3,6 +3,9 @@ package org.jabylon.csharp;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.StringWriter;
+import java.io.StringReader;
+
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -34,6 +37,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import org.xml.sax.InputSource;
 
 public class CSharpConverter implements PropertyConverter{
 
@@ -69,7 +73,7 @@ public class CSharpConverter implements PropertyConverter{
 	public PropertyFile load(InputStream in, String encoding) throws IOException {
 		// TODO Auto-generated method stub
 
-	    LOG.info("C#:load1, in: " + in.toString());
+	    LOG.info("C#:load0, in: " + in.toString());
 
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -78,25 +82,53 @@ public class CSharpConverter implements PropertyConverter{
 			Document result = builder.parse(in);
 			PropertyFile file = PropertiesFactory.eINSTANCE.createPropertyFile();
 
-			Node firstNode = result.getChildNodes().item(0);
-			if(firstNode.getNodeType()==Node.COMMENT_NODE) {
-				String nodeValue = firstNode.getNodeValue();
-				LOG.info("C#:load2, value first node: " + nodeValue);
-				file.setLicenseHeader(nodeValue);
-			}
-
 			Node resources = result.getDocumentElement();
 
-			LOG.info("C#:load3, resources, TextContent: " + resources.getTextContent());
+			LOG.info("C#:load2, resources, TextContent: " + resources.getTextContent());
+			
+			LOG.info("C#:load3,  result.getTextContent: " + result.getTextContent());
 
 			NodeList nodes = resources.getChildNodes();
+		
+			int nodesLength = nodes.getLength();
+			LOG.info("C#:load4, nodesLength: " + nodesLength);
 
-			for (int i = 0; i < nodes.getLength(); i++) {
+			for (int i = nodesLength-1; i >= 0; i--) {
 				Node node = nodes.item(i);
-				LOG.info("C#:load4, child node_" + i + " Name: " + node.getNodeName() + " Value: " + node.getNodeValue() + " Content:" + node.getTextContent() + " Type: " + node.getNodeType());
+				LOG.info("C#:load5, child node_" + i + " Name: " + node.getNodeName() + " Value: " + node.getNodeValue() + " Content:" + node.getTextContent() + " Type: " + node.getNodeType());
 				
-				loadNode(node,file);
+				if (true == loadNode(node,file)) {
+					resources.removeChild(node);
+					LOG.info("C#:load6, child node_" + i + " removed. nodes.getLength afterwards: " + nodes.getLength());
+				}
 			}
+
+			// Build a new Document without the nodes being treated by Jabylon
+			DocumentBuilderFactory docBuilderFact = DocumentBuilderFactory.newInstance();
+			docBuilderFact.setNamespaceAware(true);
+			DocumentBuilder docBuilder = docBuilderFact.newDocumentBuilder();
+			Document newDoc = docBuilder.newDocument();
+			Node importedNode = newDoc.importNode(resources, true);
+			newDoc.appendChild(importedNode);
+
+			StringWriter sw = new StringWriter();
+			String resFileAsString = "";
+			
+			Node firstNode = newDoc.getChildNodes().item(0);
+			
+		    try {
+		      Transformer t = TransformerFactory.newInstance().newTransformer();
+		      t.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+		      t.setOutputProperty(OutputKeys.INDENT, "yes");
+		      t.transform(new DOMSource(firstNode), new StreamResult(sw));
+		      resFileAsString = sw.toString();
+		      LOG.info("C#:load7, resFileAsString: " + resFileAsString);
+		    } catch (TransformerException te) {
+		      LOG.error("C#:load8, nodeToString Transformer exception: ", te);
+		    }
+		    
+			file.setLicenseHeader(resFileAsString);
+			
 			return file;
 
 		} catch (SAXException e) {
@@ -109,14 +141,9 @@ public class CSharpConverter implements PropertyConverter{
 	}
 
 
-	private void loadNode(Node node, PropertyFile file) {
-		//Android as a blueprint:
-		/*if(node.getNodeType()==Node.TEXT_NODE)
-			return;
-		if(node.getNodeType()==Node.COMMENT_NODE) {
-			comment = node.getNodeValue();
-			return;
-		}*/
+	private boolean  	// = true: node is provided for translation
+						// = false: node is not provided for translation and therefore transferred to licenseHeader for not being lost
+	loadNode(Node node, PropertyFile file) {
 
 		Property property = PropertiesFactory.eINSTANCE.createProperty();
 		String name = node.getNodeName();
@@ -125,7 +152,7 @@ public class CSharpConverter implements PropertyConverter{
 
 		if (false == loadString(node, property)) {
 			LOG.info("C#:loadNode2, node not appropiate");
-			return;
+			return false;
 		}
 		
 		// for analysis purpose
@@ -133,13 +160,13 @@ public class CSharpConverter implements PropertyConverter{
 		int nCount = eListPropAnn.size();
 		LOG.info("C#:loadNode3, was saved? nCount: " + nCount);
 
-
 		property.setComment(comment);
 		
 		LOG.info("C#:loadNode4, comment: " + comment);
 		comment = null;
 		file.getProperties().add(property);
 		LOG.info("C#:loadNode5, comment: " + comment);
+		return true;
 	}
 
 
@@ -216,8 +243,8 @@ public class CSharpConverter implements PropertyConverter{
 	}
 
 
-	private Boolean isCandidateForTranslation(String key, String nodeName) {
-		Boolean bReturn = false;
+	private boolean isCandidateForTranslation(String key, String nodeName) {
+		boolean bReturn = false;
 
 		LOG.info("C#:isCandidateForTranslation1, key: " + key + " nodeName: " + nodeName);
 
@@ -261,46 +288,64 @@ public class CSharpConverter implements PropertyConverter{
 
 			int counter = 0;
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-			Document document = factory.newDocumentBuilder().newDocument();
+			DocumentBuilder documentBuilder = factory.newDocumentBuilder();
+			Document document = documentBuilder.newDocument();
 
 			LOG.info("C#:write2");
+			
+			String licenseHeader = file.getLicenseHeader(); 
 
-			if(isFilled(file.getLicenseHeader()))
+			if(isFilled(licenseHeader))
 			{
-				LOG.info("C#:write3");
-				document.appendChild(document.createComment(file.getLicenseHeader()));
+				LOG.info("C#:write3, licenseHeader: " + licenseHeader);
+
+				// not as comment{
+//				Comment commentLicenseHeader = document.createComment(licenseHeader);
+//				LOG.info("C#:write4, commentLicenseHeader.getTextContent: " + commentLicenseHeader.getTextContent() + " commentLicenseHeader.toString(): " + commentLicenseHeader.toString());
+//				Node nodeLicenseHeader = document.appendChild(commentLicenseHeader);
+//				LOG.info("C#:write5, nodeLicenseHeader.getTextContent: " + nodeLicenseHeader.getTextContent() + " nodeLicenseHeader.toString(): " + nodeLicenseHeader.toString());
+				// not as comment}
+				
+	            Document docLicenseHeader = null;
+	            try  
+	            {
+	            	document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new StringReader(licenseHeader)));
+	            } catch (Exception e) {  
+	            	LOG.error("C#:write8 Exception when rewriting the non translatable part of the .resx file", e);  
+	            } 
 			}
 
-			LOG.info("C#:write4");
+			LOG.info("C#:write9");
 
 			Element root = document.createElement(ROOT_NODE);
 			document.appendChild(root);
+				
 			EList<Property> properties = file.getProperties();
 			for (Property property : properties) {
-				LOG.info("C#:write5, property: " + property.toString());
+				LOG.info("C#:write10, property: " + property.toString());
 				if(writeProperty(root, document, property)) {
 					counter++;
-					LOG.info("C#:write6, counter: " + counter);
+					LOG.info("C#:write11, counter: " + counter);
 				}
 			}
 
-			LOG.info("C#:write7");
+			LOG.info("C#:write12");
 
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
 			Transformer transformer = transformerFactory.newTransformer();
 			if(prettyPrint){
-				LOG.info("C#:write8");
+				LOG.info("C#:write13");
 				transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 				transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
 			}
 			DOMSource source = new DOMSource(document);
 			StreamResult result = new StreamResult(out);
 
-			LOG.info("C#:write9");
+			LOG.info("C#:write14");
 
 			transformer.transform(source, result);
 
-			LOG.info("C#:write10");
+			LOG.info("C#:write15");
 
 			return counter;
 		} catch (ParserConfigurationException e) {
