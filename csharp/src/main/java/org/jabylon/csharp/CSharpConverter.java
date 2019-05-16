@@ -6,6 +6,11 @@ import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.StringReader;
 
+import java.util.Map;
+
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -36,12 +41,14 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.DOMException;
 import org.xml.sax.SAXException;
 import org.xml.sax.InputSource;
 
 public class CSharpConverter implements PropertyConverter{
 
 	private static final String NAME_ATTRIBUTE = "name";
+	private static final String XML_SPACE = "xml:space";
 	private static final String ROOT_NODE = "root";
 	private static final String DATA = "data";
 
@@ -58,15 +65,11 @@ public class CSharpConverter implements PropertyConverter{
 
 	private String comment;
 
-	// If LOG... is running stable we can remove the System.out.println statemenets entirely
-
-
 	public CSharpConverter(URI resourceLocation, boolean prettyPrint) {
 		this.uri = resourceLocation;
 		this.prettyPrint = prettyPrint;
 		LOG.info("C#:CSharpConverter1");
 	}
-
 
 	
 	@Override
@@ -98,12 +101,13 @@ public class CSharpConverter implements PropertyConverter{
 				LOG.info("C#:load5, child node_" + i + " Name: " + node.getNodeName() + " Value: " + node.getNodeValue() + " Content:" + node.getTextContent() + " Type: " + node.getNodeType());
 				
 				if (true == loadNode(node,file)) {
-					resources.removeChild(node);
-					LOG.info("C#:load6, child node_" + i + " removed. nodes.getLength afterwards: " + nodes.getLength());
+					// 5/14/2019: Now we try plan B and replace the values in the xml file
+					//resources.removeChild(node);
+					//LOG.info("C#:load6, child node_" + i + " removed. nodes.getLength afterwards: " + nodes.getLength());
 				}
 			}
 
-			// Build a new Document without the nodes being treated by Jabylon
+			// Build a new Document includes the nodes getting treated by Jabylon
 			DocumentBuilderFactory docBuilderFact = DocumentBuilderFactory.newInstance();
 			docBuilderFact.setNamespaceAware(true);
 			DocumentBuilder docBuilder = docBuilderFact.newDocumentBuilder();
@@ -127,7 +131,7 @@ public class CSharpConverter implements PropertyConverter{
 		      LOG.error("C#:load8, nodeToString Transformer exception: ", te);
 		    }
 		    
-			file.setLicenseHeader(resFileAsString);
+			file.setLicenseHeader(resFileAsString);		// we take the license header to store everything from our resx file that should not be treated by Jabylon 
 			
 			return file;
 
@@ -139,33 +143,43 @@ public class CSharpConverter implements PropertyConverter{
 			in.close();
 		}
 	}
+	
 
-
-	private boolean  	// = true: node is provided for translation
-						// = false: node is not provided for translation and therefore transferred to licenseHeader for not being lost
-	loadNode(Node node, PropertyFile file) {
-
+	/**
+	 * 
+	 * @param node
+	 * @param file
+	 * @return true:  node is provided for translation
+	 *         false: node is not provided for translation and therefore transferred to licenseHeader for not being lost (no child left behind)
+	 */
+	private boolean loadNode(Node node, PropertyFile file) {
 		Property property = PropertiesFactory.eINSTANCE.createProperty();
 		String name = node.getNodeName();
 
 		LOG.info("C#:loadNode1, Name: " + name);
+		
+		if(false == name.equals(DATA)){
+			LOG.info("C#:loadNode2, NodeName not appropriate+");
+			return false;
+		}
 
 		if (false == loadString(node, property)) {
-			LOG.info("C#:loadNode2, node not appropiate");
+			LOG.info("C#:loadNode3, node not appropiate");
 			return false;
 		}
 		
 		// for analysis purpose
 		EList<PropertyAnnotation> eListPropAnn = property.getAnnotations();
 		int nCount = eListPropAnn.size();
-		LOG.info("C#:loadNode3, was saved? nCount: " + nCount);
+		LOG.info("C#:loadNode4, was saved? nCount: " + nCount);
 
-		property.setComment(comment);
+		// made our annotations disappear:
+		//property.setComment(comment);
 		
-		LOG.info("C#:loadNode4, comment: " + comment);
+		LOG.info("C#:loadNode5, comment: " + comment);
 		comment = null;
 		file.getProperties().add(property);
-		LOG.info("C#:loadNode5, comment: " + comment);
+		LOG.info("C#:loadNode6, comment: " + comment);
 		return true;
 	}
 
@@ -190,8 +204,16 @@ public class CSharpConverter implements PropertyConverter{
 	}
 
 	
+	/**
+	 * 
+	 * @param node	e.g.: 	<data name="labelProductName.Text" xml:space="preserve">
+    							<value>Banana.AutoCode</value>
+  							</data>
+	 * @param property
+	 * @return true:  node is provided for translation
+	 *         false: node is not provided for translation and therefore transferred to licenseHeader for not being lost
+	 */
 	private boolean loadString(Node node, Property property) {
-		
 		LOG.info("C#:loadString1, node.getTextContent(): " + node.getTextContent() + " property: " + property.getValue());
 		
 		NamedNodeMap namedNodeMap = node.getAttributes();
@@ -201,18 +223,18 @@ public class CSharpConverter implements PropertyConverter{
 			return false;
 		}
 
-		Node name = namedNodeMap.getNamedItem(NAME_ATTRIBUTE);
+		Node namedNode = namedNodeMap.getNamedItem(NAME_ATTRIBUTE);
 
-		if (null == name) {
+		if (null == namedNode) {
 			LOG.info("C#:loadString3, NAME_ATTRIBUTE not found");
 			return false;
 		}
 
-		String textContentName = name.getTextContent();
+		String textContentName = namedNode.getTextContent();
 
 		LOG.info("C#:loadString4, textContentName: " + textContentName);
 
-		String key = name.getNodeValue();
+		String key = namedNode.getNodeValue();
 		property.setKey(key);
 		
 		String textContentNode = node.getTextContent();
@@ -220,40 +242,62 @@ public class CSharpConverter implements PropertyConverter{
 		
 		// most of the xml elements in a C# resource file are not for translation
 		String nodeName = node.getNodeName();
-		if (false == isCandidateForTranslation(key, nodeName)) {
-			PropertyAnnotation annotation = PropertiesFactory.eINSTANCE.createPropertyAnnotation();
-
-			annotation.setName(PropertyAnnotations.NON_TRANSLATABLE);
-			
-			// for better debugging:
-			//property.getAnnotations().add(annotation);
-			EList<PropertyAnnotation> eListPropAnn = property.getAnnotations();
-			int nCount = eListPropAnn.size();
-			LOG.info("C#:loadString7, nCount annotations before adding: " + nCount);
-			eListPropAnn.add(annotation);
-			
-			nCount = eListPropAnn.size();
-			LOG.info("C#:loadString8, nCount annotations after adding: " + nCount + " not provided for translation");
+		//if (false == isCandidateForTranslation(key, nodeName)) {
+		if (false == isCandidateForTranslation(namedNode)) {
+			LOG.info("C#:loadString8, no candidate for translation ");
+			return false;
 		}
 		else {															// provided for translation
+			// todo: Collect the other attributes
 			LOG.info("C#:loadString10, provided for translation ");
 		}
+
 		property.setValue(decode(textContentNode));
+		
+		//property.setComment("Test @Foo Bu Test2");
+		
+		Node namedNodeXmlSpace = namedNodeMap.getNamedItem(XML_SPACE);
+		if (null != namedNodeXmlSpace) {
+			String xmlSpaceName = namedNodeXmlSpace.getTextContent();
+			String valueXmlSpace = namedNodeXmlSpace.getNodeValue();
+			LOG.info("C#:loadString11, xmlSpaceName: " + xmlSpaceName + " valueXmlSpace: " + valueXmlSpace);
+			
+			int nCounter = property.getAnnotations().size();
+			LOG.info("C#:loadString12, nCounter before: " + nCounter);
+			PropertyAnnotation annotation = PropertiesFactory.eINSTANCE.createPropertyAnnotation();
+			annotation.getValues().put(XML_SPACE, xmlSpaceName);
+			annotation.setName(XML_SPACE);
+			
+			// does not work proper actually (5/14/2019)
+			property.getAnnotations().add(annotation);
+			
+			nCounter = property.getAnnotations().size();
+			LOG.info("C#:loadString13, nCounter after: " + nCounter);
+		}
 		return true;
 	}
 
-
-	private boolean isCandidateForTranslation(String key, String nodeName) {
+	
+	/**
+	 * 
+	 * @param key
+	 * @param nodeName
+	 * @return
+	 */
+	//private boolean isCandidateForTranslation(String key, String nodeName) {
+	private boolean isCandidateForTranslation(Node node) {
 		boolean bReturn = false;
-
-		LOG.info("C#:isCandidateForTranslation1, key: " + key + " nodeName: " + nodeName);
+			
+		String key = node.getNodeValue();
+		String nodeName = node.getNodeName();
+		short nodeType = node.getNodeType();
+		
+		LOG.info("C#:isCandidateForTranslation1, key: " + key + " nodeType: " + nodeType + " nodeName: " + nodeName);
 
 		if (key.endsWith(".Text")) {
-			LOG.info("C#:isCandidateForTranslation2, key ends with .Text");
-			if(nodeName.equals(DATA)){
-				LOG.info("C#:isCandidateForTranslation3, nodeName equals DATA");
-				bReturn = true;
-			}
+		//if (Node.TEXT_NODE == nodeType) {												// did not work, nodeType was always 2
+			LOG.info("C#:isCandidateForTranslation2, node is a text node");
+			bReturn = true;
 		}
 		LOG.info("C#:isCandidateForTranslation4, bReturn: " + bReturn);
 		return bReturn;
@@ -314,38 +358,67 @@ public class CSharpConverter implements PropertyConverter{
 	            	LOG.error("C#:write8 Exception when rewriting the non translatable part of the .resx file", e);  
 	            } 
 			}
-
-			LOG.info("C#:write9");
-
-			Element root = document.createElement(ROOT_NODE);
-			document.appendChild(root);
-				
+			
+			//Element root = document.getDocumentElement();
+			
 			EList<Property> properties = file.getProperties();
+			
+			LOG.info("C#:write9, Count Properties: " + properties.size());
+			
 			for (Property property : properties) {
 				LOG.info("C#:write10, property: " + property.toString());
-				if(writeProperty(root, document, property)) {
-					counter++;
-					LOG.info("C#:write11, counter: " + counter);
+				
+				try {
+				
+					XPath xPath = XPathFactory.newInstance().newXPath();
+				
+					String searchStr = "//data[@name=\"" + property.getKey() + "\"]";
+					
+					LOG.info("C#:write11, searchstr: " + searchStr);
+					
+					Node nodeWithValue = (Node)xPath.evaluate(searchStr, document, XPathConstants.NODE);
+					NodeList childNodes = nodeWithValue.getChildNodes();
+					
+					if (null != childNodes) {
+						
+						int numberOfChildren = childNodes.getLength();
+						String newVal = property.getValue();
+						
+						LOG.info("C#:write12, number of child nodes: " + numberOfChildren + " new value: " + newVal);
+						
+						for (int i=0; i<numberOfChildren; i++) {
+							Node node = childNodes.item(i);
+							String nodeName = node.getNodeName();
+							LOG.info("C#:write13, node name: " + nodeName);
+							if (0 == nodeName.compareTo("value")) {
+								LOG.info("C#:write14, old text: " + node.getTextContent()); 
+								node.setTextContent(newVal);
+								break;
+							}
+						}
+					}
+				} catch (Exception e) {
+					LOG.info("C#:write16 ", e);
 				}
 			}
 
-			LOG.info("C#:write12");
+			LOG.info("C#:write17");
 
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
 			Transformer transformer = transformerFactory.newTransformer();
 			if(prettyPrint){
-				LOG.info("C#:write13");
+				LOG.info("C#:write18");
 				transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 				transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
 			}
 			DOMSource source = new DOMSource(document);
 			StreamResult result = new StreamResult(out);
 
-			LOG.info("C#:write14");
+			LOG.info("C#:write19");
 
 			transformer.transform(source, result);
 
-			LOG.info("C#:write15");
+			LOG.info("C#:write20");
 
 			return counter;
 		} catch (ParserConfigurationException e) {
@@ -361,7 +434,6 @@ public class CSharpConverter implements PropertyConverter{
 
 
 	private boolean writeProperty(Element root, Document document, Property property) throws IOException {
-
 		LOG.info("C#:writeProperty1");
 
 		String value = property.getValue();
@@ -394,6 +466,26 @@ public class CSharpConverter implements PropertyConverter{
 		String value = property.getValue();
 		LOG.info("C#:writeString4, value: " + value);
 		data.setTextContent(encode(value));
+	
+		
+		EList<PropertyAnnotation> annotations = property.getAnnotations();
+		PropertyAnnotation findAnnotation = property.findAnnotation(XML_SPACE);
+		if(findAnnotation !=null) {
+			LOG.info("C#:writeString5");
+		}
+		if (0 < annotations.size()) {
+			LOG.info("C#:writeString6");
+			PropertyAnnotation annotation = annotations.get(0);
+			LOG.info("C#:writeString7, annotation.getName(): " + annotation.getName());
+			if (0 < annotations.get(0).getValues().size()) {
+				LOG.info("C#:writeString8");
+				String attributeValue = annotations.get(0).getValues().get(XML_SPACE).toString();
+				if (null != attributeValue) {
+					LOG.info("C#:writeString9, attributeValue: " + attributeValue);
+					data.setAttribute(XML_SPACE, attributeValue);
+				}
+			}
+		}
 	}
 
 
