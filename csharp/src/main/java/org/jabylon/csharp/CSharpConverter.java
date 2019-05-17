@@ -51,6 +51,8 @@ public class CSharpConverter implements PropertyConverter{
 	private static final String XML_SPACE = "xml:space";
 	private static final String ROOT_NODE = "root";
 	private static final String DATA = "data";
+	private static final String TYPE = "type";
+	private static final String SYSTEM_STRING = "System.String";
 
 	private static final String NO_TRANS = "No_Translation";							// denotes a property a non-candidate for translation (most of the properties are non-candidates)
 
@@ -88,8 +90,6 @@ public class CSharpConverter implements PropertyConverter{
 			Node resources = result.getDocumentElement();
 
 			LOG.info("C#:load2, resources, TextContent: " + resources.getTextContent());
-			
-			LOG.info("C#:load3,  result.getTextContent: " + result.getTextContent());
 
 			NodeList nodes = resources.getChildNodes();
 		
@@ -101,7 +101,7 @@ public class CSharpConverter implements PropertyConverter{
 				LOG.info("C#:load5, child node_" + i + " Name: " + node.getNodeName() + " Value: " + node.getNodeValue() + " Content:" + node.getTextContent() + " Type: " + node.getNodeType());
 				
 				if (true == loadNode(node,file)) {
-					// 5/14/2019: Now we try plan B and replace the values in the xml file
+					// 5/14/2019: Now we try plan B and replace the values in the xml file therefore there is no removal anymore of the Jabylon treated nodes
 					//resources.removeChild(node);
 					//LOG.info("C#:load6, child node_" + i + " removed. nodes.getLength afterwards: " + nodes.getLength());
 				}
@@ -162,24 +162,39 @@ public class CSharpConverter implements PropertyConverter{
 			LOG.info("C#:loadNode2, NodeName not appropriate+");
 			return false;
 		}
-
+		
+		
+		NamedNodeMap namedNodeMap = node.getAttributes();
+		if (null != namedNodeMap) {
+			for (int j=0; j<namedNodeMap.getLength(); j++) {
+				Node attribute = namedNodeMap.item(j);
+				LOG.info("C#:loadNode3, attribute_" + j + " Name: " + attribute.getNodeName() + " Value: " + attribute.getNodeValue() + " Content:" + attribute.getTextContent() + " Type: " + attribute.getNodeType());
+				if (true == attribute.getNodeName().equals(TYPE)) {
+					if (false == attribute.getNodeValue().equals(SYSTEM_STRING)) {
+						LOG.info("C#:loadNode4, type attribute found which is not appropriate+");
+						return false;
+					}
+				}
+			}
+		}
+		
 		if (false == loadString(node, property)) {
-			LOG.info("C#:loadNode3, node not appropiate");
+			LOG.info("C#:loadNode5, node not appropiate");
 			return false;
 		}
 		
 		// for analysis purpose
 		EList<PropertyAnnotation> eListPropAnn = property.getAnnotations();
 		int nCount = eListPropAnn.size();
-		LOG.info("C#:loadNode4, was saved? nCount: " + nCount);
+		LOG.info("C#:loadNode6, was saved? nCount: " + nCount);
 
 		// made our annotations disappear:
 		//property.setComment(comment);
 		
-		LOG.info("C#:loadNode5, comment: " + comment);
+		LOG.info("C#:loadNode7, comment: " + comment);
 		comment = null;
 		file.getProperties().add(property);
-		LOG.info("C#:loadNode6, comment: " + comment);
+		LOG.info("C#:loadNode8, comment: " + comment);
 		return true;
 	}
 
@@ -214,7 +229,7 @@ public class CSharpConverter implements PropertyConverter{
 	 *         false: node is not provided for translation and therefore transferred to licenseHeader for not being lost
 	 */
 	private boolean loadString(Node node, Property property) {
-		LOG.info("C#:loadString1, node.getTextContent(): " + node.getTextContent() + " property: " + property.getValue());
+		LOG.info("C#:loadString1, node.getTextContent(): " + node.getTextContent() + " property: " + property.getValue() + " type: " + node.getNodeType());
 		
 		NamedNodeMap namedNodeMap = node.getAttributes();
 		
@@ -237,44 +252,49 @@ public class CSharpConverter implements PropertyConverter{
 		String key = namedNode.getNodeValue();
 		property.setKey(key);
 		
-		String textContentNode = node.getTextContent();
-		LOG.info("C#:loadString5, textContentNode: " + textContentNode);
-		
 		// most of the xml elements in a C# resource file are not for translation
-		String nodeName = node.getNodeName();
-		//if (false == isCandidateForTranslation(key, nodeName)) {
 		if (false == isCandidateForTranslation(namedNode)) {
-			LOG.info("C#:loadString8, no candidate for translation ");
+			LOG.info("C#:loadString5, no candidate for translation ");
 			return false;
 		}
 		else {															// provided for translation
 			// todo: Collect the other attributes
-			LOG.info("C#:loadString10, provided for translation ");
+			LOG.info("C#:loadString6, provided for translation ");
 		}
 
-		property.setValue(decode(textContentNode));
+
+		// not correct: we get an extra empty row{
+		//String textContentNode = node.getTextContent();
+		//LOG.info("C#:loadString10, textContentNode: " + textContentNode);
+		//property.setValue(decode(textContentNode));
+		// not correct: we get an extra empty row}
 		
-		//property.setComment("Test @Foo Bu Test2");
-		
-		Node namedNodeXmlSpace = namedNodeMap.getNamedItem(XML_SPACE);
-		if (null != namedNodeXmlSpace) {
-			String xmlSpaceName = namedNodeXmlSpace.getTextContent();
-			String valueXmlSpace = namedNodeXmlSpace.getNodeValue();
-			LOG.info("C#:loadString11, xmlSpaceName: " + xmlSpaceName + " valueXmlSpace: " + valueXmlSpace);
-			
-			int nCounter = property.getAnnotations().size();
-			LOG.info("C#:loadString12, nCounter before: " + nCounter);
-			PropertyAnnotation annotation = PropertiesFactory.eINSTANCE.createPropertyAnnotation();
-			annotation.getValues().put(XML_SPACE, xmlSpaceName);
-			annotation.setName(XML_SPACE);
-			
-			// does not work proper actually (5/14/2019)
-			property.getAnnotations().add(annotation);
-			
-			nCounter = property.getAnnotations().size();
-			LOG.info("C#:loadString13, nCounter after: " + nCounter);
+		Node valueNode = getValueNode(node);
+		if (null != valueNode) {
+			property.setValue(valueNode.getTextContent());
 		}
+		
 		return true;
+	}
+	
+	private Node getValueNode(Node node) {
+		NodeList childNodes = node.getChildNodes();
+		
+		if (null != childNodes) {
+			int numberOfChildren = childNodes.getLength();
+			
+			LOG.debug("C#:getValueNode1, number of child nodes: " + numberOfChildren);
+			
+			for (int i=0; i<numberOfChildren; i++) {
+				Node childNode = childNodes.item(i);
+				String nodeName = childNode.getNodeName();
+				LOG.info("C#:getValueNode2, node name: " + nodeName);
+				if (0 == nodeName.compareTo("value")) {
+					return childNode;
+				}
+			}
+		}			
+		return null;
 	}
 
 	
@@ -294,11 +314,22 @@ public class CSharpConverter implements PropertyConverter{
 		
 		LOG.info("C#:isCandidateForTranslation1, key: " + key + " nodeType: " + nodeType + " nodeName: " + nodeName);
 
-		if (key.endsWith(".Text")) {
+		//if (key.endsWith(".Text")) {	
 		//if (Node.TEXT_NODE == nodeType) {												// did not work, nodeType was always 2
-			LOG.info("C#:isCandidateForTranslation2, node is a text node");
+			//LOG.info("C#:isCandidateForTranslation2, node is a text node");
 			bReturn = true;
+		
+		
+		NamedNodeMap nodeMap = node.getAttributes();
+		if (null != nodeMap) {
+			int attCount = nodeMap.getLength();
+			for (int i=0; i<attCount; i++) {
+				Node attribute = nodeMap.item(i);
+				LOG.info("C#:isCandidateForTranslation3, attribute name: " + attribute.getNodeName() + " attribute type: " + attribute.getNodeType());
+			}
 		}
+		
+		
 		LOG.info("C#:isCandidateForTranslation4, bReturn: " + bReturn);
 		return bReturn;
 	}
@@ -314,11 +345,6 @@ public class CSharpConverter implements PropertyConverter{
 			LOG.info("C#:decode1, textContent is null" );
 			return null;
 		}
-
-		// Android code as a blueprint
-		/*if(textContent.startsWith("\"") && textContent.endsWith("\""))
-			return textContent.substring(1, textContent.length()-1);
-		return textContent.replace("\\'", "'");*/
 		
 		LOG.info("C#:decode1, textContent: " + textContent);
 		return textContent;
@@ -342,13 +368,6 @@ public class CSharpConverter implements PropertyConverter{
 			if(isFilled(licenseHeader))
 			{
 				LOG.info("C#:write3, licenseHeader: " + licenseHeader);
-
-				// not as comment{
-//				Comment commentLicenseHeader = document.createComment(licenseHeader);
-//				LOG.info("C#:write4, commentLicenseHeader.getTextContent: " + commentLicenseHeader.getTextContent() + " commentLicenseHeader.toString(): " + commentLicenseHeader.toString());
-//				Node nodeLicenseHeader = document.appendChild(commentLicenseHeader);
-//				LOG.info("C#:write5, nodeLicenseHeader.getTextContent: " + nodeLicenseHeader.getTextContent() + " nodeLicenseHeader.toString(): " + nodeLicenseHeader.toString());
-				// not as comment}
 				
 	            Document docLicenseHeader = null;
 	            try  
@@ -359,8 +378,6 @@ public class CSharpConverter implements PropertyConverter{
 	            } 
 			}
 			
-			//Element root = document.getDocumentElement();
-			
 			EList<Property> properties = file.getProperties();
 			
 			LOG.info("C#:write9, Count Properties: " + properties.size());
@@ -369,7 +386,6 @@ public class CSharpConverter implements PropertyConverter{
 				LOG.info("C#:write10, property: " + property.toString());
 				
 				try {
-				
 					XPath xPath = XPathFactory.newInstance().newXPath();
 				
 					String searchStr = "//data[@name=\"" + property.getKey() + "\"]";
@@ -377,25 +393,15 @@ public class CSharpConverter implements PropertyConverter{
 					LOG.info("C#:write11, searchstr: " + searchStr);
 					
 					Node nodeWithValue = (Node)xPath.evaluate(searchStr, document, XPathConstants.NODE);
-					NodeList childNodes = nodeWithValue.getChildNodes();
 					
-					if (null != childNodes) {
-						
-						int numberOfChildren = childNodes.getLength();
+					Node valueNode = getValueNode(nodeWithValue);
+					
+					if (null != valueNode) {
 						String newVal = property.getValue();
 						
-						LOG.info("C#:write12, number of child nodes: " + numberOfChildren + " new value: " + newVal);
-						
-						for (int i=0; i<numberOfChildren; i++) {
-							Node node = childNodes.item(i);
-							String nodeName = node.getNodeName();
-							LOG.info("C#:write13, node name: " + nodeName);
-							if (0 == nodeName.compareTo("value")) {
-								LOG.info("C#:write14, old text: " + node.getTextContent()); 
-								node.setTextContent(newVal);
-								break;
-							}
-						}
+						// remove the carriage return:
+						newVal = newVal.replaceAll("\\r", "");
+						valueNode.setTextContent(newVal);
 					}
 				} catch (Exception e) {
 					LOG.info("C#:write16 ", e);
@@ -466,9 +472,8 @@ public class CSharpConverter implements PropertyConverter{
 		String value = property.getValue();
 		LOG.info("C#:writeString4, value: " + value);
 		data.setTextContent(encode(value));
-	
 		
-		EList<PropertyAnnotation> annotations = property.getAnnotations();
+		/*EList<PropertyAnnotation> annotations = property.getAnnotations();
 		PropertyAnnotation findAnnotation = property.findAnnotation(XML_SPACE);
 		if(findAnnotation !=null) {
 			LOG.info("C#:writeString5");
@@ -485,7 +490,7 @@ public class CSharpConverter implements PropertyConverter{
 					data.setAttribute(XML_SPACE, attributeValue);
 				}
 			}
-		}
+		}*/
 	}
 
 
