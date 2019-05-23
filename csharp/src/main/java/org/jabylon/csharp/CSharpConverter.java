@@ -270,7 +270,7 @@ public class CSharpConverter implements PropertyConverter{
 	
 	private Node getCommentNode(Node node) {
 		LOG.debug("C#:getCommentNode1");
-		Node childNode = getChildNode(node, "comment");
+		Node childNode = getChildNode(node, COMMENT);
 		return childNode;
 	}
 	
@@ -365,22 +365,31 @@ public class CSharpConverter implements PropertyConverter{
 						LOG.debug("C#:write13, newVal: " + newVal);
 						valueNode.setTextContent(newVal);
 					}
+
 					
-					Node commentNode = getCommentNode(nodeWithValue);
-					if (null != commentNode) {
-						String newVal = property.getComment();
-						// remove the carriage return:
-						newVal = newVal.replaceAll("\\r", "");
-						LOG.debug("C#:write14, newVal: " + newVal);
-						commentNode.setTextContent(newVal);
+					String newComment = property.getComment();
+					// remove the carriage return:
+					newComment = newComment.replaceAll("\\r", "");
+					if (null != newComment) {
+						LOG.debug("C#:write14, newComment: " + newComment);
+						Node commentNode = getCommentNode(nodeWithValue);
+						if (null != commentNode) {
+							LOG.debug("C#:write15, comment replaced");
+							commentNode.setTextContent(newComment);
+						}
+						else {
+							Node newNode = nodeWithValue.appendChild(document.createElement(COMMENT));
+							LOG.debug("C#:write16, comment inserted");
+					        newNode.setTextContent(newComment);
+						}
 					}
 					
 				} catch (Exception e) {
-					LOG.error("C#:write16 ", e);
+					LOG.error("C#:write17 ", e);
 				}
 			}
 
-			LOG.debug("C#:write17");
+			LOG.debug("C#:write18");
 
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
 			Transformer transformer = transformerFactory.newTransformer();
