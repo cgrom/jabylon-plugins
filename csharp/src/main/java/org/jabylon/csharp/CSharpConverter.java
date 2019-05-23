@@ -51,6 +51,7 @@ public class CSharpConverter implements PropertyConverter{
 	private static final String XML_SPACE = "xml:space";
 	private static final String ROOT_NODE = "root";
 	private static final String DATA = "data";
+	private static final String COMMENT = "comment";
 	private static final String TYPE = "type";
 	private static final String SYSTEM_STRING = "System.String";
 
@@ -168,34 +169,51 @@ public class CSharpConverter implements PropertyConverter{
 			for (int j=0; j<namedNodeMap.getLength(); j++) {
 				Node attribute = namedNodeMap.item(j);
 				String value = attribute.getNodeValue();
-				LOG.debug(" " + j + " Name: " + attribute.getNodeName() + " Value: " + value + " Content:" + attribute.getTextContent() + " Type: " + attribute.getNodeType());
+				LOG.debug("C#:loadNode3, attribute_" + j + " Name: " + attribute.getNodeName() + " Value: " + value + " Content:" + attribute.getTextContent() + " Type: " + attribute.getNodeType());
 				if (value.startsWith(">>")) {
-					LOG.debug("C#:loadNode3, node value not appropriate");
+					LOG.debug("C#:loadNode4, node value not appropriate");
 					return false;
 				}
 				if (true == attribute.getNodeName().equals(TYPE)) {
 					if (false == attribute.getNodeValue().equals(SYSTEM_STRING)) {
-						LOG.debug("C#:loadNode4, type attribute found which is not appropriate+");
+						LOG.debug("C#:loadNode5, type attribute found which is not appropriate+");
 						return false;
 					}
 				}
 			}
 		}
 		
-		if (false == loadString(node, property)) {
-			LOG.debug("C#:loadNode5, node not appropiate");
-			return false;
+		// search for comment
+		NodeList childNodes = node.getChildNodes();
+		
+		int childNodesLength = childNodes.getLength();
+		LOG.debug("C#:loadNode6, nodesLength: " + childNodesLength);
+
+		for (int k = childNodesLength-1; k >= 0; k--) {
+			Node childNode = childNodes.item(k);
+			String nodeName = childNode.getNodeName();
+			String nodeContent = childNode.getTextContent();
+			LOG.debug("C#:loadNode7, childNode_" + k + " Name: " + nodeName + " Value: " + childNode.getNodeValue() + " Content: " + nodeContent + " Type: " + childNode.getNodeType());
+			if (null != nodeName) {
+				if (nodeName.equals(COMMENT)) {
+					LOG.debug("C#:loadNode8, comment found");
+					comment = nodeContent;
+				}
+			}
 		}
 		
-		// for analysis purpose
-		EList<PropertyAnnotation> eListPropAnn = property.getAnnotations();
-		int nCount = eListPropAnn.size();
-		LOG.debug("C#:loadNode6, was saved? nCount: " + nCount);
+		if (false == loadString(node, property)) {
+			LOG.debug("C#:loadNode9, node not appropiate");
+			return false;
+		}
 
-		LOG.debug("C#:loadNode7, comment: " + comment);
+		if (null != comment) {
+			LOG.debug("C#:loadNode10, comment was set: " + comment);
+			property.setComment(comment);
+		}
+		
 		comment = null;
 		file.getProperties().add(property);
-		LOG.debug("C#:loadNode8, comment: " + comment);
 		return true;
 	}
 
@@ -244,24 +262,38 @@ public class CSharpConverter implements PropertyConverter{
 
 	
 	private Node getValueNode(Node node) {
+		LOG.debug("C#:getValueNode1");
+		Node childNode = getChildNode(node, "value");
+		return childNode;
+	}
+
+	
+	private Node getCommentNode(Node node) {
+		LOG.debug("C#:getCommentNode1");
+		Node childNode = getChildNode(node, "comment");
+		return childNode;
+	}
+	
+	
+	private Node getChildNode(Node node, String desiredNodeName) {
+		LOG.debug("C#:getChildNode1, desiredNodeName: " + desiredNodeName);
 		NodeList childNodes = node.getChildNodes();
-		
 		if (null != childNodes) {
 			int numberOfChildren = childNodes.getLength();
-			
-			LOG.debug("C#:getValueNode1, number of child nodes: " + numberOfChildren);
+			LOG.debug("C#:getChildNode2, number of child nodes: " + numberOfChildren);
 			
 			for (int i=0; i<numberOfChildren; i++) {
 				Node childNode = childNodes.item(i);
 				String nodeName = childNode.getNodeName();
-				LOG.debug("C#:getValueNode2, node name: " + nodeName);
-				if (0 == nodeName.compareTo("value")) {
+				LOG.debug("C#:getChildNode3, node name: " + nodeName);
+				if (0 == nodeName.compareTo(desiredNodeName)) {
 					return childNode;
 				}
 			}
 		}			
 		return null;
 	}
+
 
 	
 	/**
@@ -323,15 +355,26 @@ public class CSharpConverter implements PropertyConverter{
 					
 					Node nodeWithValue = (Node)xPath.evaluate(searchStr, document, XPathConstants.NODE);
 					
-					Node valueNode = getValueNode(nodeWithValue);
+					LOG.debug("C#:write12, nodeWithValue.getNodeName: " + nodeWithValue.getNodeName() + " nodeWithValue.getTextContent: " + nodeWithValue.getTextContent() + " nodeWithValue.getNodeValue: " + nodeWithValue.getNodeValue()  + " nodeWithValue.getNodeType: " + nodeWithValue.getNodeType());
 					
+					Node valueNode = getValueNode(nodeWithValue);
 					if (null != valueNode) {
 						String newVal = property.getValue();
-						
 						// remove the carriage return:
 						newVal = newVal.replaceAll("\\r", "");
+						LOG.debug("C#:write13, newVal: " + newVal);
 						valueNode.setTextContent(newVal);
 					}
+					
+					Node commentNode = getCommentNode(nodeWithValue);
+					if (null != commentNode) {
+						String newVal = property.getComment();
+						// remove the carriage return:
+						newVal = newVal.replaceAll("\\r", "");
+						LOG.debug("C#:write14, newVal: " + newVal);
+						commentNode.setTextContent(newVal);
+					}
+					
 				} catch (Exception e) {
 					LOG.error("C#:write16 ", e);
 				}
@@ -370,21 +413,48 @@ public class CSharpConverter implements PropertyConverter{
 
 	private boolean writeProperty(Element root, Document document, Property property) throws IOException {
 		LOG.debug("C#:writeProperty1");
-
 		String value = property.getValue();
-
 		LOG.debug("C#:writeProperty2, value of property: " + value);
-
 		if(!isFilled(value)) {
 			LOG.error("C#:writeProperty3, value not filled");
 			return false;
 		}
+		
+		writeCommentAndAnnotations(root, document, property);
+		
 		// property was created by a translatable xml-element. So write back the translation
 		writeString(root,document,property);					
 		return true;
 	}
 
 
+	private void writeCommentAndAnnotations(Element root, Document document, Property property) throws IOException {
+		LOG.debug("C#:writeCommentAndAnnotations1");
+        if(property.eIsSet(PropertiesPackage.Literals.PROPERTY__COMMENT) || property.getAnnotations().size()>0)
+        {
+        	LOG.debug("C#:writeCommentAndAnnotations2");
+        	String comment = property.getCommentWithoutAnnotations();
+        	LOG.debug("C#:writeCommentAndAnnotations3, comment: " + comment);
+        	StringBuilder builder = new StringBuilder();
+        	for (PropertyAnnotation annotation : property.getAnnotations()) {
+				builder.append(annotation);
+				LOG.debug("C#:writeCommentAndAnnotations4, builder: " + builder.toString());
+			}
+        	if(builder.length()>0 && comment!=null && comment.length()>0 )
+        	{
+        		builder.append("\n");
+        		LOG.debug("C#:writeCommentAndAnnotations5, builder: " + builder.toString());
+        	}
+        	builder.append(comment);
+        	String builtComment = builder.toString();
+        	LOG.debug("C#:writeCommentAndAnnotations6, builder: " + builtComment);
+        	Comment node = document.createComment(builtComment);
+        	root.appendChild(node);
+        	LOG.debug("C#:writeCommentAndAnnotations7");
+        }
+	}
+
+	
 	private void writeString(Element root, Document document, Property property) {
 		LOG.debug("C#:writeString1");
 		Element data = document.createElement(DATA);
