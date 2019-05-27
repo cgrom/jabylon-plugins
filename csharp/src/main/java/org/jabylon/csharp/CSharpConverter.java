@@ -56,7 +56,8 @@ public class CSharpConverter implements PropertyConverter{
 	private static final String VALUE = "value";
 	private static final String TYPE = "type";
 	private static final String SYSTEM_STRING = "System.String";
-
+	private static final String INVARIANT = "@Invariant";			// denotes non translatable content
+	
 	private static final Logger LOG = LoggerFactory.getLogger(CSharpConverter.class);
 
 	/**
@@ -150,7 +151,6 @@ public class CSharpConverter implements PropertyConverter{
 	 *         false: node is not provided for translation
 	 */
 	private boolean loadNode(Node node, PropertyFile file) {
-		Property property = PropertiesFactory.eINSTANCE.createProperty();
 		String name = node.getNodeName();
 
 		LOG.debug("C#:loadNode1, Name: " + name);
@@ -161,20 +161,29 @@ public class CSharpConverter implements PropertyConverter{
 		}
 		
 		NamedNodeMap namedNodeMap = node.getAttributes();
-		if (null != namedNodeMap) {
-			for (int j=0; j<namedNodeMap.getLength(); j++) {
-				Node attribute = namedNodeMap.item(j);
-				String value = attribute.getNodeValue();
-				LOG.debug("C#:loadNode3, attribute_" + j + " Name: " + attribute.getNodeName() + " Value: " + value + " Content:" + attribute.getTextContent() + " Type: " + attribute.getNodeType());
-				if (value.startsWith(">>")) {
-					LOG.debug("C#:loadNode4, node value not appropriate");
+		if (null == namedNodeMap) {
+			LOG.error("C#:loadNode3, namedNodeMap is null");
+			return false;
+		}
+		
+		Node namedNode = namedNodeMap.getNamedItem(NAME_ATTRIBUTE);
+		if (null == namedNode) {
+			LOG.error("C#:loadNode4, NAME_ATTRIBUTE not found");
+			return false;
+		}
+		
+		for (int j=0; j<namedNodeMap.getLength(); j++) {
+			Node attribute = namedNodeMap.item(j);
+			String value = attribute.getNodeValue();
+			LOG.debug("C#:loadNode5, attribute_" + j + " Name: " + attribute.getNodeName() + " Value: " + value + " Content:" + attribute.getTextContent() + " Type: " + attribute.getNodeType());
+			if (value.startsWith(">>")) {
+				LOG.debug("C#:loadNode6, node value not appropriate");
+				return false;
+			}
+			if (true == attribute.getNodeName().equals(TYPE)) {
+				if (false == attribute.getNodeValue().equals(SYSTEM_STRING)) {
+					LOG.debug("C#:loadNode7, type attribute found which is not appropriate");
 					return false;
-				}
-				if (true == attribute.getNodeName().equals(TYPE)) {
-					if (false == attribute.getNodeValue().equals(SYSTEM_STRING)) {
-						LOG.debug("C#:loadNode5, type attribute found which is not appropriate+");
-						return false;
-					}
 				}
 			}
 		}
@@ -183,75 +192,48 @@ public class CSharpConverter implements PropertyConverter{
 		NodeList childNodes = node.getChildNodes();
 		
 		int childNodesLength = childNodes.getLength();
-		LOG.debug("C#:loadNode6, nodesLength: " + childNodesLength);
+		LOG.debug("C#:loadNode8, nodesLength: " + childNodesLength);
 
 		for (int k = childNodesLength-1; k >= 0; k--) {
 			Node childNode = childNodes.item(k);
 			String nodeName = childNode.getNodeName();
 			String nodeContent = childNode.getTextContent();
-			LOG.debug("C#:loadNode7, childNode_" + k + " Name: " + nodeName + " Value: " + childNode.getNodeValue() + " Content: " + nodeContent + " Type: " + childNode.getNodeType());
+			LOG.debug("C#:loadNode9, childNode_" + k + " Name: " + nodeName + " Value: " + childNode.getNodeValue() + " Content: " + nodeContent + " Type: " + childNode.getNodeType());
 			if (null != nodeName) {
 				if (nodeName.equals(COMMENT)) {
-					LOG.debug("C#:loadNode8, comment found");
-					comment = nodeContent;
+					LOG.debug("C#:loadNode10, comment found");
+					if (nodeContent.equals(INVARIANT)) {		// identifies an entry that is not provided for translation
+						LOG.debug("C#:loadNode11, comment indicates that this entry is not provided for translation, nodeContent: " + nodeContent);
+						return false;							
+					}
+					else {
+						comment = nodeContent;
+					}
 				}
 			}
 		}
 		
-		if (false == loadString(node, property)) {
-			LOG.debug("C#:loadNode9, node not appropiate");
-			return false;
-		}
-
-		if (null != comment) {
-			LOG.debug("C#:loadNode10, comment was set: " + comment);
-			property.setComment(comment);
-		}
-		comment = null;
-		file.getProperties().add(property);
-		return true;
-	}
-
-	
-	/**
-	 * 
-	 * @param node	e.g.: 	<data name="labelProductName.Text" xml:space="preserve">
-    							<value>Banana.AutoCode</value>
-  							</data>
-	 * @param property
-	 * @return true:  node is provided for translation
-	 *         false: node is not provided for translation and therefore transferred to licenseHeader for not being lost
-	 */
-	private boolean loadString(Node node, Property property) {
-		LOG.debug("C#:loadString1, node.getTextContent(): " + node.getTextContent() + " property: " + property.getValue() + " type: " + node.getNodeType());
-		
-		NamedNodeMap namedNodeMap = node.getAttributes();
-		
-		if (null == namedNodeMap) {
-			LOG.error("C#:loadString2, namedNodeMap is null");
-			return false;
-		}
-
-		Node namedNode = namedNodeMap.getNamedItem(NAME_ATTRIBUTE);
-
-		if (null == namedNode) {
-			LOG.error("C#:loadString3, NAME_ATTRIBUTE not found");
-			return false;
-		}
-
 		String textContentName = namedNode.getTextContent();
-
-		LOG.debug("C#:loadString4, textContentName: " + textContentName);
-
+		LOG.debug("C#:loadNode13, textContentName: " + textContentName);
+		
+		Property property = PropertiesFactory.eINSTANCE.createProperty();
 		String key = namedNode.getNodeValue();
 		property.setKey(key);
 		
-		LOG.debug("C#:loadString6, provided for translation ");
+		LOG.debug("C#:loadNode14, provided for translation ");
 		
 		Node valueNode = getValueNode(node);
 		if (null != valueNode) {
 			property.setValue(valueNode.getTextContent());
 		}
+
+		if (null != comment) {
+			LOG.debug("C#:loadNode15, comment was set: " + comment);
+			property.setComment(comment);
+		}
+		comment = null;
+		LOG.debug("C#:loadNode16, property to be added");
+		file.getProperties().add(property);
 		return true;
 	}
 
@@ -303,7 +285,6 @@ public class CSharpConverter implements PropertyConverter{
 			LOG.debug("C#:write2");
 			
 			String licenseHeader = file.getLicenseHeader(); 
-
 			if(isFilled(licenseHeader))
 			{
 				LOG.debug("C#:write3, licenseHeader: " + licenseHeader);
@@ -349,7 +330,6 @@ public class CSharpConverter implements PropertyConverter{
 					}
 					else {
 						Element newElem = document.createElement(VALUE);
-						Node newNode = nodeWithValue.appendChild(newElem);
 						LOG.debug("C#:write15, value node inserted: " + newVal);
 				        newElem.setTextContent(newVal);
 					}
