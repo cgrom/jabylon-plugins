@@ -125,9 +125,7 @@ public class CSharpScanner implements PropertyScanner {
 
 	private boolean isResourceFile(File propertyFile) {
 		LOG.debug("C#:isResourceFile2, propertyFile: " + propertyFile.getName());
-		
 		boolean isResFile = false;
-
 		if(propertyFile.getName().endsWith(".resx")) {
 			LOG.debug("C#:isResourceFile3: resource file" );
 			isResFile = true;
@@ -142,8 +140,7 @@ public class CSharpScanner implements PropertyScanner {
 		LOG.info("C#:findTemplate1");
 		if (isTranslation(propertyFile, config)) {
 			String fileName = propertyFile.getName();
-			LOG.debug("C#:findTemplate2: fileName: " + fileName );
-			// e.g.: Resources.nl.resx
+			LOG.debug("C#:findTemplate2: fileName: " + fileName );		// e.g.: Resources.nl.resx
 			String[] strings = fileName.split(".", -1);
 			if (3 == strings.length) {
 				String templateFile = strings[0] + "." + strings[2];		// e.g.: Resources.resx
@@ -199,9 +196,11 @@ public class CSharpScanner implements PropertyScanner {
 		LOG.debug("C#:computeTranslationPath1, template:" + template.getName() + " template.getPath: " + template.getPath());
 		File folder = template.getParentFile();			// template and translation files reside in the same folder
 		
-		LOG.debug("C#:computeTranslationPath2, folder: " + folder.getName());
-		LOG.debug("C#:computeTranslationPath2.1, folder.getPath: " + folder.getPath());
-		LOG.debug("C#:computeTranslationPath2.2, folder.getParent: " + folder.getParent());
+		if (null != folder) {
+			LOG.debug("C#:computeTranslationPath2, folder: " + folder.getName());
+			LOG.debug("C#:computeTranslationPath2.1, folder.getPath: " + folder.getPath());
+			LOG.debug("C#:computeTranslationPath2.2, folder.getParent: " + folder.getParent());
+		}
 
 		return folder;
 	}
@@ -216,7 +215,7 @@ public class CSharpScanner implements PropertyScanner {
 		String[] splittedPropFileName = propFileName.split("\\.");
 		
 		String language = "";		// "en" in "en_US"
-		String culture = "";		// "US" in "en_US"
+		String culture = "";		// "US" in "en_US" but there is also "Hans" in "zh-Hans"
 		boolean isTemplate = false;
 		
 		if (1 == splittedPropFileName.length) {
@@ -238,13 +237,12 @@ public class CSharpScanner implements PropertyScanner {
 					LOG.debug("C#:getLocale7, splittedPropFileName[splittedPropFileName.length-2].substring(2,3): " + splittedPropFileName[splittedPropFileName.length-2].substring(2,3));
 					if ("-".equals(splittedPropFileName[splittedPropFileName.length-2].substring(2,3))) {
 						LOG.debug("C#:getLocale8, language + culture ");
-						language = splittedPropFileName[splittedPropFileName.length-2].substring(0,2);
-						culture = splittedPropFileName[splittedPropFileName.length-2].substring(3);
+						language = splittedPropFileName[splittedPropFileName.length-2].substring(0,2);		// two chars
+						culture = splittedPropFileName[splittedPropFileName.length-2].substring(3);			// can be more than two chars
 					}
 				}
 			}
 		}
-		
 		Locale loc = null;
 
 		if (false == isTemplate) {
@@ -274,7 +272,8 @@ public class CSharpScanner implements PropertyScanner {
 
 	@Override
 	public String getEncoding() {
-		LOG.debug("C#:getEncoding1");
-		return "UTF-8";
+		String encoding = "UTF-8"; 
+		LOG.debug("C#:getEncoding1, encoding: " + encoding);
+		return encoding;
 	}
 }

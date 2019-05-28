@@ -75,10 +75,7 @@ public class CSharpConverter implements PropertyConverter{
 	
 	@Override
 	public PropertyFile load(InputStream in, String encoding) throws IOException {
-		// TODO Auto-generated method stub
-
 	    LOG.debug("C#:load0, in: " + in.toString());
-
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			factory.setIgnoringComments(false);
@@ -152,7 +149,6 @@ public class CSharpConverter implements PropertyConverter{
 	 */
 	private boolean loadNode(Node node, PropertyFile file) {
 		String name = node.getNodeName();
-
 		LOG.debug("C#:loadNode1, Name: " + name);
 		
 		if(false == name.equals(DATA)){
