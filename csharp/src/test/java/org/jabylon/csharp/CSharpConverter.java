@@ -51,7 +51,6 @@ public class CSharpConverter implements PropertyConverter{
 	private static final String TYPE = "type";
 	private static final String SYSTEM_STRING = "System.String";
 	private static final String INVARIANT = "@Invariant";			// denotes non translatable content
-	private static final String ROOT_NODE = "root";
 
 	private static final Logger LOG = LoggerFactory.getLogger(CSharpConverter.class);
 
@@ -70,10 +69,11 @@ public class CSharpConverter implements PropertyConverter{
 
 	@Override
 	public PropertyFile load(InputStream in, String encoding) throws IOException {
+		LOG.debug("C#:load0, in: " + in.toString());
         if(!in.markSupported())
             in = new BufferedInputStream(in);
         ByteOrderMark bom = PropertiesHelper.checkForBom(in);
-	    LOG.debug("C#:load0");
+	    LOG.debug("C#:load1, in: " + in.toString());
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			factory.setIgnoringComments(false);
@@ -146,6 +146,7 @@ public class CSharpConverter implements PropertyConverter{
 	 *         false: node is not provided for translation
 	 */
 	private boolean loadNode(Node node, PropertyFile file) {
+		LOG.debug("C#:loadNode0");
 		String name = node.getNodeName();
 		LOG.debug("C#:loadNode1, Name: " + name);
 
@@ -268,6 +269,7 @@ public class CSharpConverter implements PropertyConverter{
 
 	@Override
 	public int write(OutputStream out, PropertyFile file, String encoding) throws IOException {
+		LOG.debug("C#:write0");
 		try {
 			LOG.debug("C#:write1, file:" + file.toString() + " encoding: " + encoding + " out: " + out.toString());
 
@@ -303,34 +305,28 @@ public class CSharpConverter implements PropertyConverter{
 					if (null == nodeWithValue) {
 						LOG.debug("C#:write11, node not found");
 						Node rootNode = (Node)xPath.evaluate("/root", document, XPathConstants.NODE);
-						
-						if (null == rootNode) {
-							LOG.debug("C#:write12, root node created");
-							rootNode = document.createElement(ROOT_NODE);
-						}
 
 						Element newElem = document.createElement(DATA);
 						newElem.setAttribute(NAME_ATTRIBUTE, property.getKey());
 						newElem.setAttribute(XML_SPACE, PRESERVE);
 						rootNode.appendChild(newElem);
-						document.appendChild(rootNode);
 						nodeWithValue = getNodeWithValue(document, property.getKey(), xPath);
 					}
-					LOG.debug("C#:write13, nodeWithValue: " + nodeWithValue);
+					LOG.debug("C#:write12, nodeWithValue: " + nodeWithValue);
 
-					LOG.debug("C#:write14, nodeWithValue.getNodeName: " + nodeWithValue.getNodeName() + " nodeWithValue.getTextContent: " + nodeWithValue.getTextContent() + " nodeWithValue.getNodeValue: " + nodeWithValue.getNodeValue()  + " nodeWithValue.getNodeType: " + nodeWithValue.getNodeType());
+					LOG.debug("C#:write13, nodeWithValue.getNodeName: " + nodeWithValue.getNodeName() + " nodeWithValue.getTextContent: " + nodeWithValue.getTextContent() + " nodeWithValue.getNodeValue: " + nodeWithValue.getNodeValue()  + " nodeWithValue.getNodeType: " + nodeWithValue.getNodeType());
 
 					String newVal = property.getValue();
 					// remove the carriage return:
 					newVal = newVal.replaceAll("\\r", "");
 					Node valueNode = getValueNode(nodeWithValue);
 					if (null != valueNode) {
-						LOG.debug("C#:write15, newVal replaced: " + newVal);
+						LOG.debug("C#:write14, newVal replaced: " + newVal);
 						valueNode.setTextContent(newVal);
 					}
 					else {
 						Element newElem = document.createElement(VALUE);
-						LOG.debug("C#:write16, value node inserted: " + newVal);
+						LOG.debug("C#:write15, value node inserted: " + newVal);
 				        newElem.setTextContent(newVal);
 					}
 
@@ -338,37 +334,37 @@ public class CSharpConverter implements PropertyConverter{
 					if (null != newComment) {
 						// remove the carriage return:
 						newComment = newComment.replaceAll("\\r", "");
-						LOG.debug("C#:write17, newComment: " + newComment);
+						LOG.debug("C#:write16, newComment: " + newComment);
 						Node commentNode = getCommentNode(nodeWithValue);
 						if (null != commentNode) {
-							LOG.debug("C#:write18, comment replaced: " + newComment);
+							LOG.debug("C#:write17, comment replaced: " + newComment);
 							commentNode.setTextContent(newComment);
 						}
 						else {
 							Node newNode = nodeWithValue.appendChild(document.createElement(COMMENT));
-							LOG.debug("C#:write19, comment inserted");
+							LOG.debug("C#:write18, comment inserted");
 					        newNode.setTextContent(newComment);
 						}
 					}
 				} catch (Exception e) {
-					LOG.error("C#:write20 ", e);
+					LOG.error("C#:write19 ", e);
 				}
 			}
 
-			LOG.debug("C#:write21");
+			LOG.debug("C#:write20");
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
 			Transformer transformer = transformerFactory.newTransformer();
 			if(prettyPrint){
-				LOG.debug("C#:write22");
+				LOG.debug("C#:write21");
 				transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 				transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
 			}
 			DOMSource source = new DOMSource(document);
 			StreamResult result = new StreamResult(out);
 
-			LOG.debug("C#:write23");
+			LOG.debug("C#:write22");
 			transformer.transform(source, result);
-			LOG.debug("C#:write24");
+			LOG.debug("C#:write23");
 			return counter;
 		} catch (ParserConfigurationException e) {
 			throw new IOException(e);
