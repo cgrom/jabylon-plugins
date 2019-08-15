@@ -52,6 +52,122 @@ public class CSharpConverter implements PropertyConverter{
 	private static final String SYSTEM_STRING = "System.String";
 	private static final String INVARIANT = "@Invariant";			// denotes non translatable content
 	private static final String ROOT_NODE = "root";
+	private static final String EMPTY_RES_FILE = "<root>\r\n" + 
+			"  <!-- \r\n" + 
+			"    Microsoft ResX Schema \r\n" + 
+			"    \r\n" + 
+			"    Version 2.0\r\n" + 
+			"    \r\n" + 
+			"    The primary goals of this format is to allow a simple XML format \r\n" + 
+			"    that is mostly human readable. The generation and parsing of the \r\n" + 
+			"    various data types are done through the TypeConverter classes \r\n" + 
+			"    associated with the data types.\r\n" + 
+			"    \r\n" + 
+			"    Example:\r\n" + 
+			"    \r\n" + 
+			"    ... ado.net/XML headers & schema ...\r\n" + 
+			"    <resheader name=\"resmimetype\">text/microsoft-resx</resheader>\r\n" + 
+			"    <resheader name=\"version\">2.0</resheader>\r\n" + 
+			"    <resheader name=\"reader\">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>\r\n" + 
+			"    <resheader name=\"writer\">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>\r\n" + 
+			"    <data name=\"Name1\"><value>this is my long string</value><comment>this is a comment</comment></data>\r\n" + 
+			"    <data name=\"Color1\" type=\"System.Drawing.Color, System.Drawing\">Blue</data>\r\n" + 
+			"    <data name=\"Bitmap1\" mimetype=\"application/x-microsoft.net.object.binary.base64\">\r\n" + 
+			"        <value>[base64 mime encoded serialized .NET Framework object]</value>\r\n" + 
+			"    </data>\r\n" + 
+			"    <data name=\"Icon1\" type=\"System.Drawing.Icon, System.Drawing\" mimetype=\"application/x-microsoft.net.object.bytearray.base64\">\r\n" + 
+			"        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>\r\n" + 
+			"        <comment>This is a comment</comment>\r\n" + 
+			"    </data>\r\n" + 
+			"                \r\n" + 
+			"    There are any number of \"resheader\" rows that contain simple \r\n" + 
+			"    name/value pairs.\r\n" + 
+			"    \r\n" + 
+			"    Each data row contains a name, and value. The row also contains a \r\n" + 
+			"    type or mimetype. Type corresponds to a .NET class that support \r\n" + 
+			"    text/value conversion through the TypeConverter architecture. \r\n" + 
+			"    Classes that don't support this are serialized and stored with the \r\n" + 
+			"    mimetype set.\r\n" + 
+			"    \r\n" + 
+			"    The mimetype is used for serialized objects, and tells the \r\n" + 
+			"    ResXResourceReader how to depersist the object. This is currently not \r\n" + 
+			"    extensible. For a given mimetype the value must be set accordingly:\r\n" + 
+			"    \r\n" + 
+			"    Note - application/x-microsoft.net.object.binary.base64 is the format \r\n" + 
+			"    that the ResXResourceWriter will generate, however the reader can \r\n" + 
+			"    read any of the formats listed below.\r\n" + 
+			"    \r\n" + 
+			"    mimetype: application/x-microsoft.net.object.binary.base64\r\n" + 
+			"    value   : The object must be serialized with \r\n" + 
+			"            : System.Serialization.Formatters.Binary.BinaryFormatter\r\n" + 
+			"            : and then encoded with base64 encoding.\r\n" + 
+			"    \r\n" + 
+			"    mimetype: application/x-microsoft.net.object.soap.base64\r\n" + 
+			"    value   : The object must be serialized with \r\n" + 
+			"            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter\r\n" + 
+			"            : and then encoded with base64 encoding.\r\n" + 
+			"\r\n" + 
+			"    mimetype: application/x-microsoft.net.object.bytearray.base64\r\n" + 
+			"    value   : The object must be serialized into a byte array \r\n" + 
+			"            : using a System.ComponentModel.TypeConverter\r\n" + 
+			"            : and then encoded with base64 encoding.\r\n" + 
+			"    -->\r\n" + 
+			"  <xsd:schema id=\"root\" xmlns=\"\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:msdata=\"urn:schemas-microsoft-com:xml-msdata\">\r\n" + 
+			"    <xsd:element name=\"root\" msdata:IsDataSet=\"true\">\r\n" + 
+			"      <xsd:complexType>\r\n" + 
+			"        <xsd:choice maxOccurs=\"unbounded\">\r\n" + 
+			"          <xsd:element name=\"metadata\">\r\n" + 
+			"            <xsd:complexType>\r\n" + 
+			"              <xsd:sequence>\r\n" + 
+			"                <xsd:element name=\"value\" type=\"xsd:string\" minOccurs=\"0\" />\r\n" + 
+			"              </xsd:sequence>\r\n" + 
+			"              <xsd:attribute name=\"name\" type=\"xsd:string\" />\r\n" + 
+			"              <xsd:attribute name=\"type\" type=\"xsd:string\" />\r\n" + 
+			"              <xsd:attribute name=\"mimetype\" type=\"xsd:string\" />\r\n" + 
+			"            </xsd:complexType>\r\n" + 
+			"          </xsd:element>\r\n" + 
+			"          <xsd:element name=\"assembly\">\r\n" + 
+			"            <xsd:complexType>\r\n" + 
+			"              <xsd:attribute name=\"alias\" type=\"xsd:string\" />\r\n" + 
+			"              <xsd:attribute name=\"name\" type=\"xsd:string\" />\r\n" + 
+			"            </xsd:complexType>\r\n" + 
+			"          </xsd:element>\r\n" + 
+			"          <xsd:element name=\"data\">\r\n" + 
+			"            <xsd:complexType>\r\n" + 
+			"              <xsd:sequence>\r\n" + 
+			"                <xsd:element name=\"value\" type=\"xsd:string\" minOccurs=\"0\" msdata:Ordinal=\"1\" />\r\n" + 
+			"                <xsd:element name=\"comment\" type=\"xsd:string\" minOccurs=\"0\" msdata:Ordinal=\"2\" />\r\n" + 
+			"              </xsd:sequence>\r\n" + 
+			"              <xsd:attribute name=\"name\" type=\"xsd:string\" msdata:Ordinal=\"1\" />\r\n" + 
+			"              <xsd:attribute name=\"type\" type=\"xsd:string\" msdata:Ordinal=\"3\" />\r\n" + 
+			"              <xsd:attribute name=\"mimetype\" type=\"xsd:string\" msdata:Ordinal=\"4\" />\r\n" + 
+			"            </xsd:complexType>\r\n" + 
+			"          </xsd:element>\r\n" + 
+			"          <xsd:element name=\"resheader\">\r\n" + 
+			"            <xsd:complexType>\r\n" + 
+			"              <xsd:sequence>\r\n" + 
+			"                <xsd:element name=\"value\" type=\"xsd:string\" minOccurs=\"0\" msdata:Ordinal=\"1\" />\r\n" + 
+			"              </xsd:sequence>\r\n" + 
+			"              <xsd:attribute name=\"name\" type=\"xsd:string\" use=\"required\" />\r\n" + 
+			"            </xsd:complexType>\r\n" + 
+			"          </xsd:element>\r\n" + 
+			"        </xsd:choice>\r\n" + 
+			"      </xsd:complexType>\r\n" + 
+			"    </xsd:element>\r\n" + 
+			"  </xsd:schema>\r\n" + 
+			"  <resheader name=\"resmimetype\">\r\n" + 
+			"    <value>text/microsoft-resx</value>\r\n" + 
+			"  </resheader>\r\n" + 
+			"  <resheader name=\"version\">\r\n" + 
+			"    <value>2.0</value>\r\n" + 
+			"  </resheader>\r\n" + 
+			"  <resheader name=\"reader\">\r\n" + 
+			"    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>\r\n" + 
+			"  </resheader>\r\n" + 
+			"  <resheader name=\"writer\">\r\n" + 
+			"    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>\r\n" + 
+			"  </resheader>\r\n" + 
+			"</root>";
 
 	private static final Logger LOG = LoggerFactory.getLogger(CSharpConverter.class);
 
@@ -70,10 +186,11 @@ public class CSharpConverter implements PropertyConverter{
 
 	@Override
 	public PropertyFile load(InputStream in, String encoding) throws IOException {
+		LOG.debug("C#:load0");
         if(!in.markSupported())
             in = new BufferedInputStream(in);
         ByteOrderMark bom = PropertiesHelper.checkForBom(in);
-	    LOG.debug("C#:load0");
+	    LOG.debug("C#:load1");
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			factory.setIgnoringComments(false);
@@ -218,15 +335,17 @@ public class CSharpConverter implements PropertyConverter{
 
 		Node valueNode = getValueNode(node);
 		if (null != valueNode) {
-			property.setValue(valueNode.getTextContent());
+			String textcontent = valueNode.getTextContent(); 
+			LOG.debug("C#:loadNode15, textcontent: " + textcontent);
+			property.setValue(textcontent);
 		}
 
 		if (null != comment) {
-			LOG.debug("C#:loadNode15, comment was set: " + comment);
+			LOG.debug("C#:loadNode16, comment was set: " + comment);
 			property.setComment(comment);
 		}
 		comment = null;
-		LOG.debug("C#:loadNode16, property to be added");
+		LOG.debug("C#:loadNode17, property to be added");
 		file.getProperties().add(property);
 		return true;
 	}
@@ -234,7 +353,12 @@ public class CSharpConverter implements PropertyConverter{
 
 	private Node getValueNode(Node node) {
 		LOG.debug("C#:getValueNode1");
-		Node childNode = getChildNode(node, VALUE);
+		Node childNode = null;
+		
+		if (null != node) {
+			childNode = getChildNode(node, VALUE);
+		}
+		
 		return childNode;
 	}
 
@@ -279,25 +403,37 @@ public class CSharpConverter implements PropertyConverter{
 			LOG.debug("C#:write2");
 
 			String licenseHeader = file.getLicenseHeader();
-			if(isFilled(licenseHeader))
-			{
-				LOG.debug("C#:write3, licenseHeader: " + licenseHeader);
-	            try
-	            {
-	            	document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new StringReader(licenseHeader)));
-	            } catch (Exception e) {
-	            	LOG.error("C#:write8 Exception when rewriting the non translatable part of the .resx file", e);
-	            }
+			
+			if(isFilled(licenseHeader)) {
+				LOG.debug("C#:write3, licenseHeader was filled: " + licenseHeader);
 			}
+			else {
+				licenseHeader = EMPTY_RES_FILE;												// Obviously no translation for this .resx file existing
+				LOG.debug("C#:write4, licenseHeader was not filled: " + licenseHeader);
+				
+				// remove the carriage return:
+				//licenseHeader = licenseHeader.replaceAll("\\r", "");
+				//LOG.debug("C#:write5, licenseHeader after removing CR: " + licenseHeader);
+			}
+			
+            try {
+            	document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new StringReader(licenseHeader)));
+            	LOG.debug("C#:write6, document was built");
+            } catch (Exception e) {
+            	LOG.error("C#:write8 Exception when rewriting the non translatable part of the .resx file", e);
+            }
+
 
 			EList<Property> properties = file.getProperties();
-			LOG.debug("C#:write9, Count Properties: " + properties.size());
+			LOG.debug("C#:write9, count properties: " + properties.size());
+			
+			XPath xPath = XPathFactory.newInstance().newXPath();
 
 			for (Property property : properties) {
-				LOG.debug("C#:write10, property: " + property.toString());
+				LOG.debug("C#:write10, property.getKey: " + property.getKey() + " property.getValue: " + property.getValue());
 
 				try {
-					XPath xPath = XPathFactory.newInstance().newXPath();
+					//XPath xPath = XPathFactory.newInstance().newXPath();
 					Node nodeWithValue = getNodeWithValue(document, property.getKey(), xPath);
 
 					if (null == nodeWithValue) {
@@ -307,30 +443,41 @@ public class CSharpConverter implements PropertyConverter{
 						if (null == rootNode) {
 							LOG.debug("C#:write12, root node created");
 							rootNode = document.createElement(ROOT_NODE);
+							document.appendChild(rootNode);
+							LOG.debug("C#:write13, root node appended");
 						}
 
 						Element newElem = document.createElement(DATA);
 						newElem.setAttribute(NAME_ATTRIBUTE, property.getKey());
 						newElem.setAttribute(XML_SPACE, PRESERVE);
+						
+						Element value = document.createElement(VALUE);
+						value.setNodeValue(property.getValue());
+						newElem.appendChild(value);
+						
+						LOG.debug("C#:write14, node with new translation created");
+							
 						rootNode.appendChild(newElem);
-						document.appendChild(rootNode);
 						nodeWithValue = getNodeWithValue(document, property.getKey(), xPath);
 					}
-					LOG.debug("C#:write13, nodeWithValue: " + nodeWithValue);
 
-					LOG.debug("C#:write14, nodeWithValue.getNodeName: " + nodeWithValue.getNodeName() + " nodeWithValue.getTextContent: " + nodeWithValue.getTextContent() + " nodeWithValue.getNodeValue: " + nodeWithValue.getNodeValue()  + " nodeWithValue.getNodeType: " + nodeWithValue.getNodeType());
+					if (null != nodeWithValue) {
+						LOG.debug("C#:write16, nodeWithValue.getNodeName: " + nodeWithValue.getNodeName() + " nodeWithValue.getTextContent: " + nodeWithValue.getTextContent() + " nodeWithValue.getNodeValue: " + nodeWithValue.getNodeValue()  + " nodeWithValue.getNodeType: " + nodeWithValue.getNodeType());
+					}
 
 					String newVal = property.getValue();
 					// remove the carriage return:
 					newVal = newVal.replaceAll("\\r", "");
+					LOG.debug("C#:write17, newVal replaced: " + newVal);
+					
 					Node valueNode = getValueNode(nodeWithValue);
 					if (null != valueNode) {
-						LOG.debug("C#:write15, newVal replaced: " + newVal);
+						LOG.debug("C#:write18, valueNode.getNodeName: " + valueNode.getNodeName() + " valueNode.getTextContent: " + valueNode.getTextContent() + " valueNode.getNodeValue: " + valueNode.getNodeValue()  + " valueNode.getNodeType: " + valueNode.getNodeType());
 						valueNode.setTextContent(newVal);
 					}
 					else {
 						Element newElem = document.createElement(VALUE);
-						LOG.debug("C#:write16, value node inserted: " + newVal);
+						LOG.debug("C#:write19, value node inserted: " + newVal);
 				        newElem.setTextContent(newVal);
 					}
 
@@ -338,37 +485,37 @@ public class CSharpConverter implements PropertyConverter{
 					if (null != newComment) {
 						// remove the carriage return:
 						newComment = newComment.replaceAll("\\r", "");
-						LOG.debug("C#:write17, newComment: " + newComment);
+						LOG.debug("C#:write20, newComment: " + newComment);
 						Node commentNode = getCommentNode(nodeWithValue);
 						if (null != commentNode) {
-							LOG.debug("C#:write18, comment replaced: " + newComment);
+							LOG.debug("C#:write21, comment replaced: " + newComment);
 							commentNode.setTextContent(newComment);
 						}
 						else {
 							Node newNode = nodeWithValue.appendChild(document.createElement(COMMENT));
-							LOG.debug("C#:write19, comment inserted");
+							LOG.debug("C#:write22, comment inserted");
 					        newNode.setTextContent(newComment);
 						}
 					}
 				} catch (Exception e) {
-					LOG.error("C#:write20 ", e);
+					LOG.error("C#:write23 ", e);
 				}
 			}
 
-			LOG.debug("C#:write21");
+			LOG.debug("C#:write24");
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
 			Transformer transformer = transformerFactory.newTransformer();
-			if(prettyPrint){
-				LOG.debug("C#:write22");
+			if(prettyPrint) {
+				LOG.debug("C#:write25");
 				transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 				transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
 			}
 			DOMSource source = new DOMSource(document);
 			StreamResult result = new StreamResult(out);
 
-			LOG.debug("C#:write23");
+			LOG.debug("C#:write26");
 			transformer.transform(source, result);
-			LOG.debug("C#:write24");
+			LOG.debug("C#:write27");
 			return counter;
 		} catch (ParserConfigurationException e) {
 			throw new IOException(e);
