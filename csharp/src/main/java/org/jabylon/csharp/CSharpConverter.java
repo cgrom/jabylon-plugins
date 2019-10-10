@@ -7,6 +7,10 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Properties;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -52,122 +56,7 @@ public class CSharpConverter implements PropertyConverter{
 	private static final String SYSTEM_STRING = "System.String";
 	private static final String INVARIANT = "@Invariant";			// denotes non translatable content
 	private static final String ROOT_NODE = "root";
-	private static final String EMPTY_RES_FILE = "<root>\r\n" + 
-			"  <!-- \r\n" + 
-			"    Microsoft ResX Schema \r\n" + 
-			"    \r\n" + 
-			"    Version 2.0\r\n" + 
-			"    \r\n" + 
-			"    The primary goals of this format is to allow a simple XML format \r\n" + 
-			"    that is mostly human readable. The generation and parsing of the \r\n" + 
-			"    various data types are done through the TypeConverter classes \r\n" + 
-			"    associated with the data types.\r\n" + 
-			"    \r\n" + 
-			"    Example:\r\n" + 
-			"    \r\n" + 
-			"    ... ado.net/XML headers & schema ...\r\n" + 
-			"    <resheader name=\"resmimetype\">text/microsoft-resx</resheader>\r\n" + 
-			"    <resheader name=\"version\">2.0</resheader>\r\n" + 
-			"    <resheader name=\"reader\">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>\r\n" + 
-			"    <resheader name=\"writer\">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>\r\n" + 
-			"    <data name=\"Name1\"><value>this is my long string</value><comment>this is a comment</comment></data>\r\n" + 
-			"    <data name=\"Color1\" type=\"System.Drawing.Color, System.Drawing\">Blue</data>\r\n" + 
-			"    <data name=\"Bitmap1\" mimetype=\"application/x-microsoft.net.object.binary.base64\">\r\n" + 
-			"        <value>[base64 mime encoded serialized .NET Framework object]</value>\r\n" + 
-			"    </data>\r\n" + 
-			"    <data name=\"Icon1\" type=\"System.Drawing.Icon, System.Drawing\" mimetype=\"application/x-microsoft.net.object.bytearray.base64\">\r\n" + 
-			"        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>\r\n" + 
-			"        <comment>This is a comment</comment>\r\n" + 
-			"    </data>\r\n" + 
-			"                \r\n" + 
-			"    There are any number of \"resheader\" rows that contain simple \r\n" + 
-			"    name/value pairs.\r\n" + 
-			"    \r\n" + 
-			"    Each data row contains a name, and value. The row also contains a \r\n" + 
-			"    type or mimetype. Type corresponds to a .NET class that support \r\n" + 
-			"    text/value conversion through the TypeConverter architecture. \r\n" + 
-			"    Classes that don't support this are serialized and stored with the \r\n" + 
-			"    mimetype set.\r\n" + 
-			"    \r\n" + 
-			"    The mimetype is used for serialized objects, and tells the \r\n" + 
-			"    ResXResourceReader how to depersist the object. This is currently not \r\n" + 
-			"    extensible. For a given mimetype the value must be set accordingly:\r\n" + 
-			"    \r\n" + 
-			"    Note - application/x-microsoft.net.object.binary.base64 is the format \r\n" + 
-			"    that the ResXResourceWriter will generate, however the reader can \r\n" + 
-			"    read any of the formats listed below.\r\n" + 
-			"    \r\n" + 
-			"    mimetype: application/x-microsoft.net.object.binary.base64\r\n" + 
-			"    value   : The object must be serialized with \r\n" + 
-			"            : System.Serialization.Formatters.Binary.BinaryFormatter\r\n" + 
-			"            : and then encoded with base64 encoding.\r\n" + 
-			"    \r\n" + 
-			"    mimetype: application/x-microsoft.net.object.soap.base64\r\n" + 
-			"    value   : The object must be serialized with \r\n" + 
-			"            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter\r\n" + 
-			"            : and then encoded with base64 encoding.\r\n" + 
-			"\r\n" + 
-			"    mimetype: application/x-microsoft.net.object.bytearray.base64\r\n" + 
-			"    value   : The object must be serialized into a byte array \r\n" + 
-			"            : using a System.ComponentModel.TypeConverter\r\n" + 
-			"            : and then encoded with base64 encoding.\r\n" + 
-			"    -->\r\n" + 
-			"  <xsd:schema id=\"root\" xmlns=\"\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:msdata=\"urn:schemas-microsoft-com:xml-msdata\">\r\n" + 
-			"    <xsd:element name=\"root\" msdata:IsDataSet=\"true\">\r\n" + 
-			"      <xsd:complexType>\r\n" + 
-			"        <xsd:choice maxOccurs=\"unbounded\">\r\n" + 
-			"          <xsd:element name=\"metadata\">\r\n" + 
-			"            <xsd:complexType>\r\n" + 
-			"              <xsd:sequence>\r\n" + 
-			"                <xsd:element name=\"value\" type=\"xsd:string\" minOccurs=\"0\" />\r\n" + 
-			"              </xsd:sequence>\r\n" + 
-			"              <xsd:attribute name=\"name\" type=\"xsd:string\" />\r\n" + 
-			"              <xsd:attribute name=\"type\" type=\"xsd:string\" />\r\n" + 
-			"              <xsd:attribute name=\"mimetype\" type=\"xsd:string\" />\r\n" + 
-			"            </xsd:complexType>\r\n" + 
-			"          </xsd:element>\r\n" + 
-			"          <xsd:element name=\"assembly\">\r\n" + 
-			"            <xsd:complexType>\r\n" + 
-			"              <xsd:attribute name=\"alias\" type=\"xsd:string\" />\r\n" + 
-			"              <xsd:attribute name=\"name\" type=\"xsd:string\" />\r\n" + 
-			"            </xsd:complexType>\r\n" + 
-			"          </xsd:element>\r\n" + 
-			"          <xsd:element name=\"data\">\r\n" + 
-			"            <xsd:complexType>\r\n" + 
-			"              <xsd:sequence>\r\n" + 
-			"                <xsd:element name=\"value\" type=\"xsd:string\" minOccurs=\"0\" msdata:Ordinal=\"1\" />\r\n" + 
-			"                <xsd:element name=\"comment\" type=\"xsd:string\" minOccurs=\"0\" msdata:Ordinal=\"2\" />\r\n" + 
-			"              </xsd:sequence>\r\n" + 
-			"              <xsd:attribute name=\"name\" type=\"xsd:string\" msdata:Ordinal=\"1\" />\r\n" + 
-			"              <xsd:attribute name=\"type\" type=\"xsd:string\" msdata:Ordinal=\"3\" />\r\n" + 
-			"              <xsd:attribute name=\"mimetype\" type=\"xsd:string\" msdata:Ordinal=\"4\" />\r\n" + 
-			"            </xsd:complexType>\r\n" + 
-			"          </xsd:element>\r\n" + 
-			"          <xsd:element name=\"resheader\">\r\n" + 
-			"            <xsd:complexType>\r\n" + 
-			"              <xsd:sequence>\r\n" + 
-			"                <xsd:element name=\"value\" type=\"xsd:string\" minOccurs=\"0\" msdata:Ordinal=\"1\" />\r\n" + 
-			"              </xsd:sequence>\r\n" + 
-			"              <xsd:attribute name=\"name\" type=\"xsd:string\" use=\"required\" />\r\n" + 
-			"            </xsd:complexType>\r\n" + 
-			"          </xsd:element>\r\n" + 
-			"        </xsd:choice>\r\n" + 
-			"      </xsd:complexType>\r\n" + 
-			"    </xsd:element>\r\n" + 
-			"  </xsd:schema>\r\n" + 
-			"  <resheader name=\"resmimetype\">\r\n" + 
-			"    <value>text/microsoft-resx</value>\r\n" + 
-			"  </resheader>\r\n" + 
-			"  <resheader name=\"version\">\r\n" + 
-			"    <value>2.0</value>\r\n" + 
-			"  </resheader>\r\n" + 
-			"  <resheader name=\"reader\">\r\n" + 
-			"    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>\r\n" + 
-			"  </resheader>\r\n" + 
-			"  <resheader name=\"writer\">\r\n" + 
-			"    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>\r\n" + 
-			"  </resheader>\r\n" + 
-			"</root>";
+	private static final String EMPTY_RES_FILE = readFileAsString("EmptyResFile");
 
 	private static final Logger LOG = LoggerFactory.getLogger(CSharpConverter.class);
 
@@ -180,17 +69,38 @@ public class CSharpConverter implements PropertyConverter{
 
 	public CSharpConverter(URI resourceLocation, boolean prettyPrint) {
 		this.prettyPrint = prettyPrint;
-		LOG.debug("C#:CSharpConverter1");
+	}
+	
+	
+	public static String readFileAsString(String key) {
+	    String data = "";
+	    
+	    try {
+	    	
+	    	Properties prop = new Properties();
+	    	ClassLoader loader = Thread.currentThread().getContextClassLoader();
+	    	
+	    	//String path = "/org/jabylon/csharp/const.properties";
+	    	String path = "org/jabylon/csharp/const.properties";
+	    	
+	    	InputStream stream = loader.getResourceAsStream(path);
+	    	if(stream == null)
+	    		return data;
+	    	prop.load(stream);
+	      data = prop.getProperty(key);
+	      //LOG.debug("header loaded: " + data);
+	    } catch (IOException e) {
+	      e.printStackTrace();
+	    }
+	    return data;
 	}
 
 
 	@Override
 	public PropertyFile load(InputStream in, String encoding) throws IOException {
-		LOG.debug("C#:load0");
         if(!in.markSupported())
             in = new BufferedInputStream(in);
         ByteOrderMark bom = PropertiesHelper.checkForBom(in);
-	    LOG.debug("C#:load1");
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			factory.setIgnoringComments(false);
@@ -200,21 +110,20 @@ public class CSharpConverter implements PropertyConverter{
 
 			Node resources = result.getDocumentElement();
 
-			LOG.debug("C#:load2, resources, TextContent: " + resources.getTextContent());
+			LOG.debug("resources.getTextContent(): " + resources.getTextContent());
 
 			NodeList nodes = resources.getChildNodes();
 
 			int nodesLength = nodes.getLength();
-			LOG.debug("C#:load4, nodesLength: " + nodesLength);
+			LOG.debug("nodesLength: " + nodesLength);
 
 			for (int i = nodesLength-1; i >= 0; i--) {
 				Node node = nodes.item(i);
-				LOG.debug("C#:load5, child node_" + i + " Name: " + node.getNodeName() + " Value: " + node.getNodeValue() + " Content:" + node.getTextContent() + " Type: " + node.getNodeType());
+				LOG.debug("child node_" + i + " Name: " + node.getNodeName() + " Value: " + node.getNodeValue() + " Content:" + node.getTextContent() + " Type: " + node.getNodeType());
 
 				if (loadNode(node,file)) {
 					// 5/14/2019: Now we try plan B and replace the values in the xml file therefore there is no removal anymore of the Jabylon treated nodes
 					//resources.removeChild(node);
-					//LOG.info("C#:load6, child node_" + i + " removed. nodes.getLength afterwards: " + nodes.getLength());
 				}
 			}
 
@@ -237,9 +146,9 @@ public class CSharpConverter implements PropertyConverter{
 		      t.setOutputProperty(OutputKeys.INDENT, "yes");
 		      t.transform(new DOMSource(firstNode), new StreamResult(sw));
 		      resFileAsString = sw.toString();
-		      LOG.debug("C#:load7, resFileAsString: " + resFileAsString);
+		      LOG.debug("resFileAsString: " + resFileAsString);
 		    } catch (TransformerException te) {
-		      LOG.error("C#:load8, nodeToString Transformer exception: ", te);
+		      LOG.error("TransformerException: ", te);
 		    }
 			file.setLicenseHeader(resFileAsString);		// we take the license header to store everything from our .resx
 
@@ -264,36 +173,36 @@ public class CSharpConverter implements PropertyConverter{
 	 */
 	private boolean loadNode(Node node, PropertyFile file) {
 		String name = node.getNodeName();
-		LOG.debug("C#:loadNode1, Name: " + name);
+		LOG.debug("Name: " + name);
 
 		if(!name.equals(DATA)){
-			LOG.debug("C#:loadNode2, NodeName not appropriate");
+			LOG.debug("NodeName not appropriate");
 			return false;
 		}
 
 		NamedNodeMap namedNodeMap = node.getAttributes();
 		if (null == namedNodeMap) {
-			LOG.error("C#:loadNode3, namedNodeMap is null");
+			LOG.error("namedNodeMap is null");
 			return false;
 		}
 
 		Node namedNode = namedNodeMap.getNamedItem(NAME_ATTRIBUTE);
 		if (null == namedNode) {
-			LOG.error("C#:loadNode4, NAME_ATTRIBUTE not found");
+			LOG.error("NAME_ATTRIBUTE not found");
 			return false;
 		}
 
 		for (int j=0; j<namedNodeMap.getLength(); j++) {
 			Node attribute = namedNodeMap.item(j);
 			String value = attribute.getNodeValue();
-			LOG.debug("C#:loadNode5, attribute_" + j + " Name: " + attribute.getNodeName() + " Value: " + value + " Content:" + attribute.getTextContent() + " Type: " + attribute.getNodeType());
+			LOG.debug("attribute_" + j + " Name: " + attribute.getNodeName() + " Value: " + value + " Content:" + attribute.getTextContent() + " Type: " + attribute.getNodeType());
 			if (value.startsWith(">>")) {
-				LOG.debug("C#:loadNode6, node value not appropriate");
+				LOG.debug("node value not appropriate");
 				return false;
 			}
 			if (attribute.getNodeName().equals(TYPE)) {
 				if (!attribute.getNodeValue().equals(SYSTEM_STRING)) {
-					LOG.debug("C#:loadNode7, type attribute found which is not appropriate");
+					LOG.debug("type attribute found which is not appropriate");
 					return false;
 				}
 			}
@@ -303,18 +212,18 @@ public class CSharpConverter implements PropertyConverter{
 		NodeList childNodes = node.getChildNodes();
 
 		int childNodesLength = childNodes.getLength();
-		LOG.debug("C#:loadNode8, nodesLength: " + childNodesLength);
+		LOG.debug("nodesLength: " + childNodesLength);
 
 		for (int k = childNodesLength-1; k >= 0; k--) {
 			Node childNode = childNodes.item(k);
 			String nodeName = childNode.getNodeName();
 			String nodeContent = childNode.getTextContent();
-			LOG.debug("C#:loadNode9, childNode_" + k + " Name: " + nodeName + " Value: " + childNode.getNodeValue() + " Content: " + nodeContent + " Type: " + childNode.getNodeType());
+			LOG.debug("childNode_" + k + " Name: " + nodeName + " Value: " + childNode.getNodeValue() + " Content: " + nodeContent + " Type: " + childNode.getNodeType());
 			if (null != nodeName) {
 				if (nodeName.equals(COMMENT)) {
-					LOG.debug("C#:loadNode10, comment found");
+					LOG.debug("comment found");
 					if (nodeContent.equals(INVARIANT)) {		// identifies an entry that is not provided for translation
-						LOG.debug("C#:loadNode11, comment indicates that this entry is not provided for translation, nodeContent: " + nodeContent);
+						LOG.debug("comment indicates that this entry is not provided for translation, nodeContent: " + nodeContent);
 						return false;
 					}
 					else {
@@ -325,34 +234,33 @@ public class CSharpConverter implements PropertyConverter{
 		}
 
 		String textContentName = namedNode.getTextContent();
-		LOG.debug("C#:loadNode13, textContentName: " + textContentName);
+		LOG.debug("textContentName: " + textContentName);
 
 		Property property = PropertiesFactory.eINSTANCE.createProperty();
 		String key = namedNode.getNodeValue();
 		property.setKey(key);
 
-		LOG.debug("C#:loadNode14, provided for translation ");
+		LOG.debug("provided for translation ");
 
 		Node valueNode = getValueNode(node);
 		if (null != valueNode) {
 			String textcontent = valueNode.getTextContent(); 
-			LOG.debug("C#:loadNode15, textcontent: " + textcontent);
+			LOG.debug("textcontent: " + textcontent);
 			property.setValue(textcontent);
 		}
 
 		if (null != comment) {
-			LOG.debug("C#:loadNode16, comment was set: " + comment);
+			LOG.debug("comment was set: " + comment);
 			property.setComment(comment);
 		}
 		comment = null;
-		LOG.debug("C#:loadNode17, property to be added");
+		LOG.debug("property to be added");
 		file.getProperties().add(property);
 		return true;
 	}
 
 
 	private Node getValueNode(Node node) {
-		LOG.debug("C#:getValueNode1");
 		Node childNode = null;
 		
 		if (null != node) {
@@ -364,23 +272,22 @@ public class CSharpConverter implements PropertyConverter{
 
 
 	private Node getCommentNode(Node node) {
-		LOG.debug("C#:getCommentNode1");
 		Node childNode = getChildNode(node, COMMENT);
 		return childNode;
 	}
 
 
 	private Node getChildNode(Node node, String desiredNodeName) {
-		LOG.debug("C#:getChildNode1, desiredNodeName: " + desiredNodeName);
+		LOG.debug("desiredNodeName: " + desiredNodeName);
 		NodeList childNodes = node.getChildNodes();
 		if (null != childNodes) {
 			int numberOfChildren = childNodes.getLength();
-			LOG.debug("C#:getChildNode2, number of child nodes: " + numberOfChildren);
+			LOG.debug("number of child nodes: " + numberOfChildren);
 
 			for (int i=0; i<numberOfChildren; i++) {
 				Node childNode = childNodes.item(i);
 				String nodeName = childNode.getNodeName();
-				LOG.debug("C#:getChildNode3, node name: " + nodeName);
+				LOG.debug("node name: " + nodeName);
 				if (0 == nodeName.compareTo(desiredNodeName)) {
 					return childNode;
 				}
@@ -393,39 +300,32 @@ public class CSharpConverter implements PropertyConverter{
 	@Override
 	public int write(OutputStream out, PropertyFile file, String encoding) throws IOException {
 		try {
-			LOG.debug("C#:write1, file:" + file.toString() + " encoding: " + encoding + " out: " + out.toString());
-
 			int counter = 0;
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder documentBuilder = factory.newDocumentBuilder();
 			Document document = documentBuilder.newDocument();
 
-			LOG.debug("C#:write2");
 
 			String licenseHeader = file.getLicenseHeader();
 			
 			if(isFilled(licenseHeader)) {
-				LOG.debug("C#:write3, licenseHeader was filled: " + licenseHeader);
+				LOG.debug("licenseHeader was filled: " + licenseHeader);
 			}
 			else {
 				licenseHeader = EMPTY_RES_FILE;												// Obviously no translation for this .resx file existing
-				LOG.debug("C#:write4, licenseHeader was not filled: " + licenseHeader);
-				
-				// remove the carriage return:
-				//licenseHeader = licenseHeader.replaceAll("\\r", "");
-				//LOG.debug("C#:write5, licenseHeader after removing CR: " + licenseHeader);
+				LOG.debug("licenseHeader was not filled: " + licenseHeader);
 			}
 			
             try {
             	document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(new StringReader(licenseHeader)));
-            	LOG.debug("C#:write6, document was built");
+            	LOG.debug("document was built");
             } catch (Exception e) {
-            	LOG.error("C#:write8 Exception when rewriting the non translatable part of the .resx file", e);
+            	LOG.error("Exception when rewriting the non translatable part of the .resx file", e);
             }
 
 
 			EList<Property> properties = file.getProperties();
-			LOG.debug("C#:write9, count properties: " + properties.size());
+			LOG.debug("count properties: " + properties.size());
 			
 			XPath xPath = XPathFactory.newInstance().newXPath();
 
@@ -433,18 +333,17 @@ public class CSharpConverter implements PropertyConverter{
 				LOG.debug("C#:write10, property.getKey: " + property.getKey() + " property.getValue: " + property.getValue());
 
 				try {
-					//XPath xPath = XPathFactory.newInstance().newXPath();
 					Node nodeWithValue = getNodeWithValue(document, property.getKey(), xPath);
 
 					if (null == nodeWithValue) {
-						LOG.debug("C#:write11, node not found");
+						LOG.debug("node not found");
 						Node rootNode = (Node)xPath.evaluate("/root", document, XPathConstants.NODE);
 						
 						if (null == rootNode) {
-							LOG.debug("C#:write12, root node created");
+							LOG.debug("root node created");
 							rootNode = document.createElement(ROOT_NODE);
 							document.appendChild(rootNode);
-							LOG.debug("C#:write13, root node appended");
+							LOG.debug("root node appended");
 						}
 
 						Element newElem = document.createElement(DATA);
@@ -455,29 +354,28 @@ public class CSharpConverter implements PropertyConverter{
 						value.setNodeValue(property.getValue());
 						newElem.appendChild(value);
 						
-						LOG.debug("C#:write14, node with new translation created");
+						LOG.debug("node with new translation created");
 							
 						rootNode.appendChild(newElem);
 						nodeWithValue = getNodeWithValue(document, property.getKey(), xPath);
 					}
 
 					if (null != nodeWithValue) {
-						LOG.debug("C#:write16, nodeWithValue.getNodeName: " + nodeWithValue.getNodeName() + " nodeWithValue.getTextContent: " + nodeWithValue.getTextContent() + " nodeWithValue.getNodeValue: " + nodeWithValue.getNodeValue()  + " nodeWithValue.getNodeType: " + nodeWithValue.getNodeType());
+						LOG.debug("nodeWithValue.getNodeName: " + nodeWithValue.getNodeName() + " nodeWithValue.getTextContent: " + nodeWithValue.getTextContent() + " nodeWithValue.getNodeValue: " + nodeWithValue.getNodeValue()  + " nodeWithValue.getNodeType: " + nodeWithValue.getNodeType());
 					}
 
 					String newVal = property.getValue();
 					// remove the carriage return:
 					newVal = newVal.replaceAll("\\r", "");
-					LOG.debug("C#:write17, newVal replaced: " + newVal);
 					
 					Node valueNode = getValueNode(nodeWithValue);
 					if (null != valueNode) {
-						LOG.debug("C#:write18, valueNode.getNodeName: " + valueNode.getNodeName() + " valueNode.getTextContent: " + valueNode.getTextContent() + " valueNode.getNodeValue: " + valueNode.getNodeValue()  + " valueNode.getNodeType: " + valueNode.getNodeType());
+						LOG.debug("valueNode.getNodeName: " + valueNode.getNodeName() + " valueNode.getTextContent: " + valueNode.getTextContent() + " valueNode.getNodeValue: " + valueNode.getNodeValue()  + " valueNode.getNodeType: " + valueNode.getNodeType());
 						valueNode.setTextContent(newVal);
 					}
 					else {
 						Element newElem = document.createElement(VALUE);
-						LOG.debug("C#:write19, value node inserted: " + newVal);
+						LOG.debug("value node inserted: " + newVal);
 				        newElem.setTextContent(newVal);
 					}
 
@@ -485,37 +383,33 @@ public class CSharpConverter implements PropertyConverter{
 					if (null != newComment) {
 						// remove the carriage return:
 						newComment = newComment.replaceAll("\\r", "");
-						LOG.debug("C#:write20, newComment: " + newComment);
+						LOG.debug("newComment: " + newComment);
 						Node commentNode = getCommentNode(nodeWithValue);
 						if (null != commentNode) {
-							LOG.debug("C#:write21, comment replaced: " + newComment);
+							LOG.debug("comment replaced: " + newComment);
 							commentNode.setTextContent(newComment);
 						}
 						else {
 							Node newNode = nodeWithValue.appendChild(document.createElement(COMMENT));
-							LOG.debug("C#:write22, comment inserted");
+							LOG.debug("comment inserted");
 					        newNode.setTextContent(newComment);
 						}
 					}
 				} catch (Exception e) {
-					LOG.error("C#:write23 ", e);
+					LOG.error("exception when writing: ", e);
 				}
 			}
 
-			LOG.debug("C#:write24");
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
 			Transformer transformer = transformerFactory.newTransformer();
 			if(prettyPrint) {
-				LOG.debug("C#:write25");
 				transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 				transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
 			}
 			DOMSource source = new DOMSource(document);
 			StreamResult result = new StreamResult(out);
 
-			LOG.debug("C#:write26");
 			transformer.transform(source, result);
-			LOG.debug("C#:write27");
 			return counter;
 		} catch (ParserConfigurationException e) {
 			throw new IOException(e);
@@ -531,19 +425,18 @@ public class CSharpConverter implements PropertyConverter{
 
 	private Node getNodeWithValue(Document document, String key, XPath xPath) {
 		String searchStr = "//data[@name=\"" + key + "\"]";
-		LOG.debug("C#:GetNodeWithValue1, searchstr: " + searchStr);
+		LOG.debug("searchstr: " + searchStr);
 			Node nodeWithValue =null;
 			try {
 				nodeWithValue = (Node)xPath.evaluate(searchStr, document, XPathConstants.NODE);
 			} catch (XPathExpressionException e) {
-				LOG.debug("C#:GetNodeWithValue2 failed with exception: ", e);
+				LOG.debug("failed: ", e);
 			}
 			return nodeWithValue;
 	}
 
 
 	private boolean isFilled(String s){
-		LOG.debug("C#:isFilled1, s: " + s);
 		return s!=null && !s.isEmpty();
 	}
 }
